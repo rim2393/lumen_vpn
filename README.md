@@ -7,6 +7,10 @@ It must not contain private backend/frontend/node-agent/protocol source,
 registry tokens, license keys, SSH credentials, subscription URLs, generated
 runtime configs, support bundles, or backups.
 
+Real passwords, one-time install tokens, and generated `.env` values must not
+be committed. Keep smoke-test inventory notes secret-free and store credentials
+only in root-only files on the target hosts.
+
 ## Quick start
 
 ```bash
@@ -22,6 +26,9 @@ and image references pinned by digest from a signed release manifest.
 sudo ./scripts/install.sh --config /opt/lumen/.env
 ```
 
+For a panel VPS plus node VPS smoke test, use the secret-free inventory template
+and runbook in `docs/TWO_SERVER_SMOKE.md`.
+
 ## Operations
 
 ```bash
@@ -34,6 +41,7 @@ sudo ./scripts/support-bundle.sh --config /opt/lumen/.env --redact-ips
 
 Manual node install is fallback only. The main product flow is push provisioning
 from the private panel/backend over SSH, then outbound node-agent management.
+See `docs/NODE_INSTALL.md` for fallback dry-run and token handling details.
 
 ```bash
 sudo ./scripts/install-node.sh --panel-url https://panel.example.com --install-token-stdin
@@ -45,9 +53,9 @@ until the private license service is connected.
 ## Local checks
 
 ```bash
+for f in scripts/*.sh scripts/lib/*.sh; do bash -n "$f"; done
 shellcheck scripts/*.sh scripts/lib/*.sh
 docker compose --env-file .env.example -f deploy/compose/lumen.yml config
 docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
 ./scripts/secret-scan.sh .
 ```
-

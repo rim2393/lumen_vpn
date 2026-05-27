@@ -4,6 +4,10 @@ This public repo must not contain private source, registry tokens, passwords,
 license keys, SSH credentials, subscription URLs, backups, support bundles, or
 generated runtime configs.
 
+Real passwords and generated `.env` values must never be committed, even for a
+temporary smoke test. Use placeholders in docs and store secrets only in
+root-only files on the target host.
+
 Use file-based secret inputs:
 
 - `REGISTRY_TOKEN_FILE`
@@ -14,4 +18,3 @@ Use file-based secret inputs:
 
 Support bundles redact common secret keys by default and can redact IP addresses
 with `--redact-ips`.
-

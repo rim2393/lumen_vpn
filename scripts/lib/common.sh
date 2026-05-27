@@ -32,7 +32,8 @@ ensure_config() {
     return 0
   fi
   if [ "$DRY_RUN" = "1" ]; then
-    log "using .env.example for dry-run"
+    log "dry-run config not found at $CONFIG_FILE; reading $REPO_ROOT/.env.example"
+    log "dry-run leaves generated values unwritten; production secrets belong only in a private config path"
     CONFIG_FILE="$REPO_ROOT/.env.example"
     return 0
   fi
@@ -59,7 +60,7 @@ env_value() {
 env_set() {
   local key="$1" value="$2" tmp
   if [ "$DRY_RUN" = "1" ]; then
-    log "would set $key"
+    log "dry-run would write $key to $CONFIG_FILE (value suppressed; file unchanged)"
     return 0
   fi
   tmp="$(mktemp)"
@@ -86,8 +87,12 @@ ensure_secret() {
   current="$(env_value "$key")"
   case "$current" in
     ""|GENERATED_AT_INSTALL|GENERATE|CHANGE_ME)
-      env_set "$key" "$(random_secret)"
-      log "generated $key"
+      if [ "$DRY_RUN" = "1" ]; then
+        env_set "$key" "<generated>"
+      else
+        env_set "$key" "$(random_secret)"
+        log "generated $key"
+      fi
       ;;
   esac
 }
@@ -109,9 +114,9 @@ compose() {
 
 compose_run() {
   if [ "$DRY_RUN" = "1" ]; then
-    printf '[lumen][dry-run] docker compose --env-file %q -f %q' "$CONFIG_FILE" "$COMPOSE_FILE"
-    printf ' %q' "$@"
-    printf '\n'
+    printf '[lumen][dry-run] docker compose --env-file %q -f %q' "$CONFIG_FILE" "$COMPOSE_FILE" >&2
+    printf ' %q' "$@" >&2
+    printf '\n' >&2
     return 0
   fi
   compose "$@"
@@ -147,4 +152,3 @@ redact_stream() {
     -e 's#(PASSWORD|SECRET|TOKEN|PEPPER|KEY|SEED)=.*#\1=<redacted>#g' \
     -e 's#(password|secret|token|private_key|license_key)([" ]*[:=][" ]*)[^" ,]+#\1\2<redacted>#gi'
 }
-

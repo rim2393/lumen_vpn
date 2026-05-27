@@ -23,20 +23,28 @@ done
 # shellcheck source=scripts/lib/common.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
+write_node_env() {
+  {
+    printf 'TZ=%s\n' "${TZ:-UTC}"
+    printf 'LUMEN_PANEL_URL=%s\n' "$PANEL_URL"
+    printf 'LUMEN_NODE_NAME=%s\n' "$NODE_NAME"
+    printf 'LUMEN_NODE_AGENT_IMAGE=%s\n' "${LUMEN_NODE_AGENT_IMAGE:-ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
+  } >"$CONFIG_FILE"
+  chmod 0600 "$CONFIG_FILE"
+}
+
 main() {
   require_root_or_dry_run
   [ -n "$PANEL_URL" ] || die "--panel-url is required"
   printf '%s' "$PANEL_URL" | grep -Eq '^https://' || die "--panel-url must use https"
   [ "$TOKEN_STDIN" = "1" ] || [ -n "$TOKEN_FILE" ] || die "install token source is required"
   run mkdir -p /opt/lumen-node/secrets /opt/lumen-node/state
-  if [ "$DRY_RUN" != "1" ]; then
-    {
-      printf 'TZ=%s\n' "${TZ:-UTC}"
-      printf 'LUMEN_PANEL_URL=%s\n' "$PANEL_URL"
-      printf 'LUMEN_NODE_NAME=%s\n' "$NODE_NAME"
-      printf 'LUMEN_NODE_AGENT_IMAGE=%s\n' "${LUMEN_NODE_AGENT_IMAGE:-ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
-    } >"$CONFIG_FILE"
-    chmod 0600 "$CONFIG_FILE"
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would create $CONFIG_FILE with non-secret node settings"
+    log "dry-run node env: LUMEN_PANEL_URL=$PANEL_URL LUMEN_NODE_NAME=$NODE_NAME"
+    log "dry-run does not read, print, or write the install token"
+  else
+    write_node_env
     if [ "$TOKEN_STDIN" = "1" ]; then
       IFS= read -r token
       printf '%s\n' "$token" > /opt/lumen-node/secrets/install-token
@@ -52,4 +60,3 @@ main() {
 }
 
 main "$@"
-
