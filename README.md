@@ -56,7 +56,8 @@ sudo ./scripts/install-node.sh --control-plane-url https://panel.example.com --i
 
 Free mode is represented by `FREE_NODE_LIMIT=3`. Licensed mode is connected by
 the private control plane and central license service; this public repo only
-stores installer fields and docs.
+stores installer fields and docs. Paid capacity is accepted by the panel only
+from central signed entitlements verified with `LUMEN_CENTRAL_LICENSE_PUBLIC_KEY_B64`.
 
 ## Local checks
 

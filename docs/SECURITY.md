@@ -21,6 +21,10 @@ Do not pass node install tokens with a `LUMEN_INSTALL_TOKEN` environment
 variable. The node installer writes the one-time token to a root-only file and
 the node-agent receives only the file path.
 
+The panel does not trust local license rows for paid capacity. Configure the
+central license public key with `LUMEN_CENTRAL_LICENSE_PUBLIC_KEY_B64`; only
+signed entitlements from that key can raise the node limit above the free tier.
+
 Support bundles redact common secret keys by default and can redact IP addresses
 with `--redact-ips`. Compose logs are passed through the same redactor before
 they are added to the bundle.
