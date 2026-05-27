@@ -8,6 +8,7 @@ NODE_NAME="manual-node"
 CONFIG_FILE="/opt/lumen-node/.env"
 NODE_AGENT_IMAGE=""
 ALLOW_UNPINNED_IMAGES=0
+INSECURE_TLS=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -19,7 +20,8 @@ while [ "$#" -gt 0 ]; do
     --config) CONFIG_FILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --allow-unpinned-images) ALLOW_UNPINNED_IMAGES=1; shift ;;
-    -h|--help) echo "Usage: install-node.sh --control-plane-url URL (--install-token-stdin|--install-token-file PATH) [--node-name NAME] [--node-agent-image IMAGE] [--dry-run]"; exit 0 ;;
+    --insecure-tls) INSECURE_TLS=1; shift ;;
+    -h|--help) echo "Usage: install-node.sh --control-plane-url URL (--install-token-stdin|--install-token-file PATH) [--node-name NAME] [--node-agent-image IMAGE] [--insecure-tls] [--dry-run]"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -44,6 +46,9 @@ write_node_env() {
     printf 'LUMEN_NODE_STATE_DIR=%s\n' "$LUMEN_NODE_STATE_DIR"
     printf 'LUMEN_NODE_SECRETS_DIR=%s\n' "$LUMEN_NODE_SECRETS_DIR"
     printf 'LUMEN_ALLOW_UNPINNED_IMAGES=%s\n' "${LUMEN_ALLOW_UNPINNED_IMAGES:-false}"
+    if [ "$INSECURE_TLS" = "1" ]; then
+      printf 'NODE_TLS_REJECT_UNAUTHORIZED=0\n'
+    fi
   } >"$CONFIG_FILE"
   chmod 0600 "$CONFIG_FILE"
 }
@@ -62,6 +67,9 @@ main() {
   LUMEN_NODE_SECRETS_DIR="${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}"
   if [ "$ALLOW_UNPINNED_IMAGES" = "1" ]; then
     LUMEN_ALLOW_UNPINNED_IMAGES=true
+  fi
+  if [ "$INSECURE_TLS" = "1" ]; then
+    warn "--insecure-tls disables Node.js TLS certificate verification for node-agent smoke testing"
   fi
   [ -n "$CONTROL_PLANE_URL" ] || die "--control-plane-url is required"
   printf '%s' "$CONTROL_PLANE_URL" | grep -Eq '^https://' || die "--control-plane-url must use https"

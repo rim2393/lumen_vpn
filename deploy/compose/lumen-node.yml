@@ -10,6 +10,7 @@ services:
       LUMEN_NODE_NAME: ${LUMEN_NODE_NAME:-manual-node}
       LUMEN_INSTALL_TOKEN_FILE: /run/lumen-node/install-token
       LUMEN_STATE_DIR: /var/lib/lumen-node
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-}
     volumes:
       - ${LUMEN_NODE_STATE_DIR:-/opt/lumen-node/state}:/var/lib/lumen-node
       - ${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}:/run/lumen-node:ro
