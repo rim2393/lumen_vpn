@@ -75,14 +75,14 @@ outside the repo.
 ./scripts/sign-manifest.sh \
   --private-key-file /secure/release-signing.key \
   --kid lumen-release-2026-05 \
-  --output /secure/lumen-release-v0.1.1.json \
+  --output /secure/lumen-release-v0.1.2.json \
   release/manifest.template.json
 ```
 
 ```bash
 sudo ./scripts/upgrade.sh \
   --config /opt/lumen/.env \
-  --manifest /secure/lumen-release-v0.1.1.json \
+  --manifest /secure/lumen-release-v0.1.2.json \
   --backup-passphrase-file /root/lumen-backup.pass
 ```
 
