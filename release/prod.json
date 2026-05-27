@@ -1,0 +1,18 @@
+{
+  "schema": "lumen.release.v1",
+  "version": "main-34abc7243e9d8107e3a800c8cf8b24c0885fcefc",
+  "released_at": "2026-05-27T23:33:21Z",
+  "installer_min_version": "v0.1.9",
+  "free_node_limit": 3,
+  "images": {
+    "api": "ghcr.io/rim2393/lumen-api:main-34abc7243e9d8107e3a800c8cf8b24c0885fcefc@sha256:99a447a690b3a64086cdf96b05662ac8e4b09447e049e54d58d5cf3a0f63e0a7",
+    "web": "ghcr.io/rim2393/lumen-web:main-34abc7243e9d8107e3a800c8cf8b24c0885fcefc@sha256:0b6241e83ed4436474bfec4357a8ad98a9f455bc59623a27b988299cc430b0de",
+    "node_agent": "ghcr.io/rim2393/lumen-node-agent:main-34abc7243e9d8107e3a800c8cf8b24c0885fcefc@sha256:c991ba6242a5ed0c188f6eb1067b5337f96f5202bdf7f671140f248c6499c2ab",
+    "subscription": "ghcr.io/rim2393/lumen-subscription-page:main-34abc7243e9d8107e3a800c8cf8b24c0885fcefc@sha256:fe961ea0bc4b4c6f1d97c77f10db4cca539e20e164f021bd80183963c19aa5f5"
+  },
+  "signature": {
+    "alg": "Ed25519",
+    "kid": "lumen-release-main",
+    "value": "ktq1UIwLBc2d/DBhMjr8xvTDqfAR3Je9T0PsLHGue52GOc8BnVxmldY7oZZ6NjPWL42Z2Xcg2rTIvjOHccnkBg=="
+  }
+}
