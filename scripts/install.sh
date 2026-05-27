@@ -85,7 +85,7 @@ ensure_acme_sh() {
 }
 
 issue_acme_cert() {
-  local domain="$1" cert_dir acme
+  local domain="$1" cert_dir acme issue_rc
   [ -n "$domain" ] || return 0
   truthy "${LUMEN_ACME_ENABLED:-true}" || {
     warn "ACME disabled; keeping bootstrap certificate for $domain"
@@ -99,7 +99,17 @@ issue_acme_cert() {
   ensure_acme_sh
   acme="$(acme_binary)" || die "acme.sh install failed"
   run "$acme" --set-default-ca --server letsencrypt
+  set +e
   run "$acme" --issue -d "$domain" -w /var/www/lumen-acme --keylength ec-256
+  issue_rc=$?
+  set -e
+  if [ "$issue_rc" -ne 0 ]; then
+    if [ "$issue_rc" -eq 2 ]; then
+      warn "ACME certificate for $domain is already valid; installing existing certificate"
+    else
+      return "$issue_rc"
+    fi
+  fi
   run "$acme" --install-cert -d "$domain" --ecc \
     --fullchain-file "$cert_dir/fullchain.pem" \
     --key-file "$cert_dir/privkey.pem" \
