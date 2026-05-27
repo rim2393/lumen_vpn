@@ -145,7 +145,7 @@ normalize_placeholder_image_refs() {
     if printf '%s' "$value" | grep -Eq '@sha256:0{64}$'; then
       stripped="${value%@sha256:*}"
       printf -v "$key" '%s' "$stripped"
-      export "$key"
+      export "${key?}"
       warn "$key uses placeholder digest; using tag-only image because LUMEN_ALLOW_UNPINNED_IMAGES is enabled"
     fi
   done
@@ -199,7 +199,7 @@ registry_login() {
     return 0
   fi
   [ -r "$token_file" ] || die "registry token file is not readable"
-  cat "$token_file" | docker login "$host" -u "$username" --password-stdin >/dev/null
+  docker login "$host" -u "$username" --password-stdin <"$token_file" >/dev/null
 }
 
 compose_pull() {
@@ -274,7 +274,7 @@ render_template() {
     return 0
   fi
   have_cmd envsubst || die "envsubst is required"
-  envsubst '${PANEL_DOMAIN} ${SUBSCRIPTION_DOMAIN} ${AUTH_PORTAL_DOMAIN} ${TLS_CERT_DIR} ${LUMEN_API_PORT} ${LUMEN_WEB_PORT} ${LUMEN_SUBSCRIPTION_PORT}' <"$src" >"$dst"
+  envsubst "\${PANEL_DOMAIN} \${SUBSCRIPTION_DOMAIN} \${AUTH_PORTAL_DOMAIN} \${TLS_CERT_DIR} \${LUMEN_API_PORT} \${LUMEN_WEB_PORT} \${LUMEN_SUBSCRIPTION_PORT}" <"$src" >"$dst"
 }
 
 redact_stream() {
@@ -300,7 +300,9 @@ validate_email() {
 validate_port() {
   local key="$1" value="$2"
   printf '%s' "$value" | grep -Eq '^[0-9]+$' || die "$key must be numeric"
-  [ "$value" -ge 1 ] && [ "$value" -le 65535 ] || die "$key must be in range 1..65535"
+  if [ "$value" -lt 1 ] || [ "$value" -gt 65535 ]; then
+    die "$key must be in range 1..65535"
+  fi
 }
 
 validate_https_url() {

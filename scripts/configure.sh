@@ -77,7 +77,9 @@ apply_override() {
   local file="$1" pair="$2" key value
   key="${pair%%=*}"
   value="${pair#*=}"
-  [ -n "$key" ] && [ "$key" != "$pair" ] || die "--set expects KEY=VALUE"
+  if [ -z "$key" ] || [ "$key" = "$pair" ]; then
+    die "--set expects KEY=VALUE"
+  fi
   printf '%s' "$key" | grep -Eq '^[A-Z0-9_]+$' || die "invalid config key: $key"
   set_kv "$file" "$key" "$value"
 }
