@@ -19,7 +19,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 install_packages() {
   if have_cmd apt-get; then
     run apt-get update
-    if apt-cache show docker-compose-plugin >/dev/null 2>&1; then
+    if apt-cache show docker-compose-v2 >/dev/null 2>&1; then
+      run apt-get install -y --no-install-recommends ca-certificates curl gnupg openssl gettext-base nginx jq docker.io docker-compose-v2
+    elif apt-cache show docker-compose-plugin >/dev/null 2>&1; then
       run apt-get install -y --no-install-recommends ca-certificates curl gnupg openssl gettext-base nginx jq docker.io docker-compose-plugin
     else
       run apt-get install -y --no-install-recommends ca-certificates curl gnupg openssl gettext-base nginx jq docker.io docker-compose

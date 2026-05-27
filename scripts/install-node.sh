@@ -29,6 +29,22 @@ done
 # shellcheck source=scripts/lib/common.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
+install_node_packages() {
+  if have_cmd apt-get; then
+    run apt-get update
+    if apt-cache show docker-compose-v2 >/dev/null 2>&1; then
+      run apt-get install -y --no-install-recommends ca-certificates curl gnupg openssl jq docker.io docker-compose-v2
+    elif apt-cache show docker-compose-plugin >/dev/null 2>&1; then
+      run apt-get install -y --no-install-recommends ca-certificates curl gnupg openssl jq docker.io docker-compose-plugin
+    else
+      run apt-get install -y --no-install-recommends ca-certificates curl gnupg openssl jq docker.io docker-compose
+    fi
+    run systemctl enable --now docker
+  else
+    warn "apt-get not found; install Docker and Docker Compose v2 manually"
+  fi
+}
+
 load_existing_node_env() {
   if [ -f "$CONFIG_FILE" ]; then
     # shellcheck disable=SC1090
@@ -75,6 +91,7 @@ main() {
   printf '%s' "$CONTROL_PLANE_URL" | grep -Eq '^https://' || die "--control-plane-url must use https"
   [ "$TOKEN_STDIN" = "1" ] || [ -n "$TOKEN_FILE" ] || die "install token source is required"
   validate_image_refs strict LUMEN_NODE_AGENT_IMAGE
+  install_node_packages
   registry_login
   run mkdir -p "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
   run chown 1000:1000 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
