@@ -49,7 +49,7 @@ main() {
   run ln -sfn /etc/nginx/sites-available/lumen-panel.conf /etc/nginx/sites-enabled/lumen-panel.conf
   run ln -sfn /etc/nginx/sites-available/lumen-subscription.conf /etc/nginx/sites-enabled/lumen-subscription.conf
   compose_run config >/dev/null
-  compose_run pull
+  compose_pull
   compose_run up -d
   log "install scaffold complete: https://$PANEL_DOMAIN"
 }

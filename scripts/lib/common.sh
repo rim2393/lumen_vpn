@@ -133,6 +133,10 @@ allow_unpinned_images() {
   truthy "${LUMEN_ALLOW_UNPINNED_IMAGES:-0}"
 }
 
+skip_image_pull() {
+  truthy "${LUMEN_SKIP_IMAGE_PULL:-0}"
+}
+
 normalize_placeholder_image_refs() {
   local key value stripped
   allow_unpinned_images || return 0
@@ -191,6 +195,14 @@ registry_login() {
   fi
   [ -r "$token_file" ] || die "registry token file is not readable"
   cat "$token_file" | docker login "$host" -u "$username" --password-stdin >/dev/null
+}
+
+compose_pull() {
+  if skip_image_pull; then
+    log "skipping docker compose pull because LUMEN_SKIP_IMAGE_PULL is enabled"
+    return 0
+  fi
+  compose_run pull
 }
 
 validate_release_manifest() {

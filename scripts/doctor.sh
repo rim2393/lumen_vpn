@@ -41,10 +41,9 @@ main() {
     FAILURES=$((FAILURES + 1))
   fi
   if [ "$DRY_RUN" != "1" ] && have_cmd curl; then
-    check panel-health curl -fsS "https://$PANEL_DOMAIN/api/healthz"
+    check panel-health curl -fsS "https://$PANEL_DOMAIN/api/v1/health/live"
   fi
   [ "$FAILURES" -eq 0 ]
 }
 
 main "$@"
-

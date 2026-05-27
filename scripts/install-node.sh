@@ -90,7 +90,7 @@ main() {
   fi
   COMPOSE_FILE="$REPO_ROOT/deploy/compose/lumen-node.yml"
   compose_run config >/dev/null
-  compose_run pull
+  compose_pull
   compose_run up -d
   log "node-agent bootstrap started"
 }

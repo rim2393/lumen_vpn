@@ -26,6 +26,10 @@ pre-release smoke run against tag-only private images, set
 digests from `.env.example` are reduced to tag-only image references before
 Compose pulls. Remove the override before release validation.
 
+For a local-image smoke build on a private VPS, set `LUMEN_SKIP_IMAGE_PULL=true`
+and point `LUMEN_API_IMAGE`, `LUMEN_WEB_IMAGE`, and subscription/node images at
+the local tags already loaded into Docker.
+
 ## Dry-run config behavior
 
 Dry-run is for command review before applying host changes. Pair it with
