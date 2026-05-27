@@ -68,7 +68,8 @@ main() {
   [ "$TOKEN_STDIN" = "1" ] || [ -n "$TOKEN_FILE" ] || die "install token source is required"
   validate_image_refs strict LUMEN_NODE_AGENT_IMAGE
   run mkdir -p "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
-  run chmod 0700 "$LUMEN_NODE_SECRETS_DIR"
+  run chown 1000:1000 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
+  run chmod 0700 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
   if [ "$DRY_RUN" = "1" ]; then
     log "dry-run would create $CONFIG_FILE with non-secret node settings"
     log "dry-run node env: LUMEN_CONTROL_PLANE_URL=$CONTROL_PLANE_URL LUMEN_NODE_NAME=$NODE_NAME"
@@ -83,6 +84,8 @@ main() {
       [ -r "$TOKEN_FILE" ] || die "install token file is not readable"
       install -m 0600 "$TOKEN_FILE" "$LUMEN_NODE_SECRETS_DIR/install-token"
     fi
+    chown 1000:1000 "$LUMEN_NODE_SECRETS_DIR/install-token"
+    chmod 0400 "$LUMEN_NODE_SECRETS_DIR/install-token"
   fi
   COMPOSE_FILE="$REPO_ROOT/deploy/compose/lumen-node.yml"
   compose_run config >/dev/null
