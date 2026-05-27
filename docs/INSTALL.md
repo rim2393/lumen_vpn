@@ -62,6 +62,12 @@ copy those values back into this repo.
 records the previous env under `$LUMEN_BACKUP_DIR/upgrade-state/<timestamp>`,
 updates image pins, runs migrations, and restarts the stack.
 
+Production release manifests are verified with Ed25519 before any backup,
+image update, pull, or migration work starts. Put the trusted public key on the
+host outside the repo and set `LUMEN_RELEASE_PUBLIC_KEY_FILE` in the private
+config, for example `/opt/lumen/release-signing.pub`. The manifest signature is
+computed over the canonical payload from `jq -cS 'del(.signature)'`.
+
 ```bash
 sudo ./scripts/upgrade.sh \
   --config /opt/lumen/.env \

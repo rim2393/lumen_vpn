@@ -50,9 +50,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends jq openssl
       - run: bash ./scripts/validate-manifest.sh --allow-template release/manifest.template.json
       - run: |
           if bash ./scripts/validate-manifest.sh release/manifest.template.json; then
             echo "template manifest must not pass strict production validation" >&2
             exit 1
           fi
+      - run: bash ./scripts/test-manifest-signature.sh

@@ -19,8 +19,10 @@ images:
 - future Android and Windows client source
 
 Public installers consume only signed release metadata and pinned image
-references. Runtime secrets are generated or supplied on the target host and
-must stay outside this repository.
+references. Production manifests are verified against an Ed25519 public key
+configured on the target host with `LUMEN_RELEASE_PUBLIC_KEY_FILE`; signing
+keys remain in the private release pipeline. Runtime secrets are generated or
+supplied on the target host and must stay outside this repository.
 
 Run the boundary check before publishing:
 

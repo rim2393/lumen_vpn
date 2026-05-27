@@ -25,6 +25,8 @@ Production installs require real domains, ACME email, registry access if needed,
 and image references pinned by digest from a signed release manifest.
 Pre-release smoke runs may set `LUMEN_ALLOW_UNPINNED_IMAGES=true` or pass
 `--allow-unpinned-images`; do not use that override for production releases.
+Production manifest validation also requires the Ed25519 public key file
+configured in `LUMEN_RELEASE_PUBLIC_KEY_FILE`.
 
 ```bash
 sudo ./scripts/install.sh --config /opt/lumen/.env
@@ -64,5 +66,6 @@ shellcheck scripts/*.sh scripts/lib/*.sh
 docker compose --env-file .env.example -f deploy/compose/lumen.yml config
 docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
 ./scripts/validate-manifest.sh --allow-template release/manifest.template.json
+./scripts/test-manifest-signature.sh
 ./scripts/secret-scan.sh .
 ```

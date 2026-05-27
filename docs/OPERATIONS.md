@@ -13,9 +13,10 @@ uploads, and runtime state. Backups contain secrets and should be encrypted with
 
 `restore.sh` is destructive and requires `--force`.
 
-`upgrade.sh` consumes a signed release manifest, creates a pre-upgrade backup,
-records previous image/env state, updates image references, runs migrations, and
-starts the stack.
+`upgrade.sh` consumes a signed release manifest, verifies its Ed25519 signature
+with `LUMEN_RELEASE_PUBLIC_KEY_FILE`, creates a pre-upgrade backup, records
+previous image/env state, updates image references, runs migrations, and starts
+the stack.
 
 `rollback.sh` restores the last recorded pre-upgrade image/env state, or
 delegates to `restore.sh` when a full encrypted backup is supplied.

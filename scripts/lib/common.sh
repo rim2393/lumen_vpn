@@ -211,8 +211,9 @@ compose_pull() {
 }
 
 validate_release_manifest() {
-  local manifest="$1"
+  local manifest="$1" key_file payload_file sig_file sig_value tmpdir
   have_cmd jq || die "jq is required"
+  have_cmd openssl || die "openssl is required"
   jq -e '
     .schema == "lumen.release.v1"
     and (.version | type == "string" and length > 0)
@@ -224,12 +225,35 @@ validate_release_manifest() {
     and (.images.node_agent | type == "string" and length > 0)
     and (.images.subscription | type == "string" and length > 0)
     and ([.images.api, .images.web, .images.node_agent, .images.subscription] | all(test("@sha256:[0-9a-f]{64}$")))
-    and (.signature.alg | type == "string" and length > 0)
+    and (.signature.alg == "Ed25519")
     and (.signature.kid | type == "string" and length > 0)
     and (.signature.value | type == "string" and length > 0)
     and (.signature.kid != "release-signing-key-id")
     and (.signature.value != "BASE64_SIGNATURE_PLACEHOLDER")
   ' "$manifest" >/dev/null || die "invalid release manifest"
+
+  key_file="${LUMEN_RELEASE_PUBLIC_KEY_FILE:-}"
+  [ -n "$key_file" ] || die "LUMEN_RELEASE_PUBLIC_KEY_FILE is required for production release manifest validation"
+  [ -r "$key_file" ] || die "release public key file is not readable: $key_file"
+  openssl pkey -pubin -in "$key_file" -noout >/dev/null 2>&1 || die "release public key file is not a valid public key: $key_file"
+
+  tmpdir="$(mktemp -d)"
+  payload_file="$tmpdir/payload.json"
+  sig_file="$tmpdir/signature.bin"
+  if ! jq -cS 'del(.signature)' "$manifest" >"$payload_file"; then
+    rm -rf "$tmpdir"
+    die "failed to canonicalize release manifest"
+  fi
+  sig_value="$(jq -r '.signature.value' "$manifest")"
+  if ! printf '%s' "$sig_value" | base64 -d >"$sig_file" 2>/dev/null; then
+    rm -rf "$tmpdir"
+    die "release manifest signature is not valid base64"
+  fi
+  if ! openssl pkeyutl -verify -pubin -inkey "$key_file" -rawin -in "$payload_file" -sigfile "$sig_file" >/dev/null 2>&1; then
+    rm -rf "$tmpdir"
+    die "release manifest signature verification failed"
+  fi
+  rm -rf "$tmpdir"
 }
 
 validate_release_manifest_template() {

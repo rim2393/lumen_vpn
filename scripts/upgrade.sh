@@ -43,8 +43,8 @@ main() {
   local -a backup_args
   require_root_or_dry_run
   [ -r "$MANIFEST_FILE" ] || die "--manifest is required"
-  validate_release_manifest "$MANIFEST_FILE"
   load_env
+  validate_release_manifest "$MANIFEST_FILE"
   validate_panel_config
   BACKUP_PASSPHRASE_FILE="${BACKUP_PASSPHRASE_FILE:-${UPGRADE_BACKUP_PASSPHRASE_FILE:-}}"
   backup_args=(--config "$CONFIG_FILE")

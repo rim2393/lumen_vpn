@@ -6,7 +6,13 @@ ALLOW_TEMPLATE=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --allow-template) ALLOW_TEMPLATE=1; shift ;;
-    -h|--help) echo "Usage: validate-manifest.sh [--allow-template] MANIFEST"; exit 0 ;;
+    --public-key-file)
+      [ "$#" -ge 2 ] || { echo "--public-key-file requires a path" >&2; exit 2; }
+      LUMEN_RELEASE_PUBLIC_KEY_FILE="$2"
+      export LUMEN_RELEASE_PUBLIC_KEY_FILE
+      shift 2
+      ;;
+    -h|--help) echo "Usage: validate-manifest.sh [--allow-template] [--public-key-file PATH] MANIFEST"; exit 0 ;;
     --) shift; break ;;
     -*) echo "Unknown option: $1" >&2; exit 2 ;;
     *) break ;;
