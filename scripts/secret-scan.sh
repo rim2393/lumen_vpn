@@ -9,7 +9,7 @@ scan() {
   pattern="$2"
   rg_path="$(command -v rg 2>/dev/null || true)"
   if [ -n "$rg_path" ] && [ -x "$rg_path" ]; then
-    out="$("$rg_path" -n --hidden --glob '!.git/**' --glob '!backups/**' --glob '!support-bundles/**' "$pattern" "$ROOT" || true)"
+    out="$("$rg_path" -n --hidden --glob '!.git/**' --glob '!backups/**' --glob '!support-bundles/**' -- "$pattern" "$ROOT" || true)"
   else
     out="$(grep -RInE --exclude-dir=.git --exclude-dir=backups --exclude-dir=support-bundles -- "$pattern" "$ROOT" || true)"
   fi
