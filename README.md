@@ -7,6 +7,9 @@ It must not contain private backend/frontend/node-agent/protocol source,
 registry tokens, license keys, SSH credentials, subscription URLs, generated
 runtime configs, support bundles, or backups.
 
+See [Release Boundary](docs/RELEASE_BOUNDARY.md) for the enforced public/private
+split.
+
 Real passwords, one-time install tokens, and generated `.env` values must not
 be committed. Keep smoke-test inventory notes secret-free and store credentials
 only in root-only files on the target hosts.
