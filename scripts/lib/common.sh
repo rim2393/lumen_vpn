@@ -6,7 +6,7 @@ CONFIG_FILE="${CONFIG_FILE:-/opt/lumen/.env}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-$REPO_ROOT/deploy/compose/lumen.yml}"
-LUMEN_INSTALLER_VERSION="${LUMEN_INSTALLER_VERSION:-v0.1.3}"
+LUMEN_INSTALLER_VERSION="${LUMEN_INSTALLER_VERSION:-v0.1.4}"
 
 log() { printf '[lumen] %s\n' "$*" >&2; }
 warn() { printf '[lumen][warn] %s\n' "$*" >&2; }
