@@ -5,10 +5,10 @@
   "installer_min_version": "v0.1.0",
   "free_node_limit": 3,
   "images": {
-    "api": "ghcr.io/rim2393/lumen-api:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
-    "web": "ghcr.io/rim2393/lumen-web:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
-    "node_agent": "ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
-    "subscription": "ghcr.io/rim2393/lumen-subscription-page:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    "api": "ghcr.io/rim2393/lumen-api:v0.1.0@sha256:409467c4763183d0b5546be7ba73f9a504663fe329e737c76fe8944b7ee97394",
+    "web": "ghcr.io/rim2393/lumen-web:v0.1.0@sha256:0395372e5940a8d8bf981607e24ac5698333e465b9ec2fb6cb2be0218782b465",
+    "node_agent": "ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:12e0e3b85ecc34d9984837d1f78fde099152cad8642c459fd719e327e2566d6e",
+    "subscription": "ghcr.io/rim2393/lumen-subscription-page:v0.1.0@sha256:14e567e20ce022cf996a780c052297349281052c8f3ebd5d80515f9dd3808b7d"
   },
   "signature": {
     "alg": "Ed25519",
@@ -16,4 +16,3 @@
     "value": "BASE64_SIGNATURE_PLACEHOLDER"
   }
 }
-
