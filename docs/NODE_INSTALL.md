@@ -55,6 +55,10 @@ the node VPS only. It contains non-secret node settings such as
 Treat `/opt/lumen-node/secrets/install-token` as sensitive until the panel
 confirms it has been consumed or rotated.
 
+If node-agent images are private, set `REGISTRY_HOST`, `REGISTRY_USERNAME`, and
+`REGISTRY_TOKEN_FILE` in the node config before install. The installer performs
+`docker login` through stdin and does not print the token.
+
 `--panel-url` remains accepted as a compatibility alias for
 `--control-plane-url`, but new docs and automation should use the control-plane
 name.

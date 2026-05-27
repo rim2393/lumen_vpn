@@ -22,7 +22,9 @@ port `8000`; Nginx still reaches it through host loopback port `8080`.
 Production installs refuse unpinned or placeholder image digests. For a
 pre-release smoke run against tag-only private images, set
 `LUMEN_ALLOW_UNPINNED_IMAGES=true` in the private config or pass
-`--allow-unpinned-images`. Remove that override before release validation.
+`--allow-unpinned-images`. When that override is enabled, placeholder zero
+digests from `.env.example` are reduced to tag-only image references before
+Compose pulls. Remove the override before release validation.
 
 ## Dry-run config behavior
 

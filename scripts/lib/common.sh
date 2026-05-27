@@ -133,12 +133,27 @@ allow_unpinned_images() {
   truthy "${LUMEN_ALLOW_UNPINNED_IMAGES:-0}"
 }
 
+normalize_placeholder_image_refs() {
+  local key value stripped
+  allow_unpinned_images || return 0
+  for key in "$@"; do
+    value="${!key:-}"
+    if printf '%s' "$value" | grep -Eq '@sha256:0{64}$'; then
+      stripped="${value%@sha256:*}"
+      printf -v "$key" '%s' "$stripped"
+      export "$key"
+      warn "$key uses placeholder digest; using tag-only image because LUMEN_ALLOW_UNPINNED_IMAGES is enabled"
+    fi
+  done
+}
+
 validate_image_refs() {
   local strict="${1:-warn}" key value bad=0
   if [ "$#" -gt 0 ]; then
     shift
   fi
   [ "$#" -gt 0 ] || die "validate_image_refs requires at least one image variable"
+  normalize_placeholder_image_refs "$@"
   for key in "$@"; do
     value="${!key:-}"
     if [ -z "$value" ]; then
@@ -163,6 +178,19 @@ validate_image_refs() {
 
 validate_images() {
   validate_image_refs "${1:-warn}" POSTGRES_IMAGE REDIS_IMAGE LUMEN_API_IMAGE LUMEN_WEB_IMAGE LUMEN_NODE_AGENT_IMAGE LUMEN_SUBSCRIPTION_IMAGE
+}
+
+registry_login() {
+  local host="${REGISTRY_HOST:-}" username="${REGISTRY_USERNAME:-}" token_file="${REGISTRY_TOKEN_FILE:-}"
+  [ -n "$host" ] || return 0
+  [ -n "$username" ] || return 0
+  [ -n "$token_file" ] || return 0
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would authenticate Docker registry $host as $username using token file $token_file"
+    return 0
+  fi
+  [ -r "$token_file" ] || die "registry token file is not readable"
+  cat "$token_file" | docker login "$host" -u "$username" --password-stdin >/dev/null
 }
 
 validate_release_manifest() {

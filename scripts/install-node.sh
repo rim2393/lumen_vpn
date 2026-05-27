@@ -67,6 +67,7 @@ main() {
   printf '%s' "$CONTROL_PLANE_URL" | grep -Eq '^https://' || die "--control-plane-url must use https"
   [ "$TOKEN_STDIN" = "1" ] || [ -n "$TOKEN_FILE" ] || die "install token source is required"
   validate_image_refs strict LUMEN_NODE_AGENT_IMAGE
+  registry_login
   run mkdir -p "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
   run chown 1000:1000 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
   run chmod 0700 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
