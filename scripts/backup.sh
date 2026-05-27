@@ -4,6 +4,7 @@ set -Eeuo pipefail
 CONFIG_FILE="/opt/lumen/.env"
 PASSPHRASE_FILE=""
 ALLOW_PLAINTEXT=0
+BACKUP_WORK_DIR=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -19,8 +20,12 @@ done
 # shellcheck source=scripts/lib/common.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
+cleanup_backup_work_dir() {
+  [ -z "${BACKUP_WORK_DIR:-}" ] || rm -rf -- "$BACKUP_WORK_DIR"
+}
+
 main() {
-  local ts out work
+  local ts out
   require_root_or_dry_run
   load_env
   [ -n "$PASSPHRASE_FILE" ] || [ "$ALLOW_PLAINTEXT" = "1" ] || die "backup contains secrets; use --passphrase-file or --allow-plaintext"
@@ -31,15 +36,15 @@ main() {
     log "would create backup $out"
     return 0
   fi
-  work="$(mktemp -d)"
-  trap 'rm -rf -- "$work"' EXIT
-  mkdir -p "$work/db" "$work/config" "$work/secrets" "$work/data"
-  compose exec -T postgres pg_dump -U lumen -d lumen --format=custom >"$work/db/postgres.dump"
-  install -m 0600 "$CONFIG_FILE" "$work/config/lumen.env"
-  cp -a "$LUMEN_SECRETS_DIR/." "$work/secrets/" 2>/dev/null || true
-  cp -a "$LUMEN_DATA_DIR/uploads" "$work/data/" 2>/dev/null || true
-  cp -a "$LUMEN_DATA_DIR/runtime" "$work/data/" 2>/dev/null || true
-  tar -C "$work" -czf "$out" .
+  BACKUP_WORK_DIR="$(mktemp -d)"
+  trap cleanup_backup_work_dir EXIT
+  mkdir -p "$BACKUP_WORK_DIR/db" "$BACKUP_WORK_DIR/config" "$BACKUP_WORK_DIR/secrets" "$BACKUP_WORK_DIR/data"
+  compose exec -T postgres pg_dump -U lumen -d lumen --format=custom >"$BACKUP_WORK_DIR/db/postgres.dump"
+  install -m 0600 "$CONFIG_FILE" "$BACKUP_WORK_DIR/config/lumen.env"
+  cp -a "$LUMEN_SECRETS_DIR/." "$BACKUP_WORK_DIR/secrets/" 2>/dev/null || true
+  cp -a "$LUMEN_DATA_DIR/uploads" "$BACKUP_WORK_DIR/data/" 2>/dev/null || true
+  cp -a "$LUMEN_DATA_DIR/runtime" "$BACKUP_WORK_DIR/data/" 2>/dev/null || true
+  tar -C "$BACKUP_WORK_DIR" -czf "$out" .
   chmod 0600 "$out"
   if [ -n "$PASSPHRASE_FILE" ]; then
     openssl enc -aes-256-cbc -pbkdf2 -salt -in "$out" -out "$out.enc" -pass "file:$PASSPHRASE_FILE"
