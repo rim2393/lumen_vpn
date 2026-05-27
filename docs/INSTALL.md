@@ -30,6 +30,10 @@ For a local-image smoke build on a private VPS, set `LUMEN_SKIP_IMAGE_PULL=true`
 and point `LUMEN_API_IMAGE`, `LUMEN_WEB_IMAGE`, and subscription/node images at
 the local tags already loaded into Docker.
 
+If no certificate exists yet, the installer creates a temporary 14-day
+self-signed bootstrap certificate so Nginx can start. Replace it with ACME
+certificates before production exposure.
+
 ## Dry-run config behavior
 
 Dry-run is for command review before applying host changes. Pair it with

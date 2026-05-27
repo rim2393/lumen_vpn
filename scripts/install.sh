@@ -27,6 +27,28 @@ install_packages() {
   fi
 }
 
+ensure_bootstrap_cert() {
+  local domain="$1" cert_dir
+  [ -n "$domain" ] || return 0
+  cert_dir="$TLS_CERT_DIR/$domain"
+  if [ -f "$cert_dir/fullchain.pem" ] && [ -f "$cert_dir/privkey.pem" ]; then
+    return 0
+  fi
+  run mkdir -p "$cert_dir"
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would generate temporary self-signed TLS certificate for $domain"
+    return 0
+  fi
+  openssl req -x509 -nodes -newkey rsa:2048 -days 14 \
+    -subj "/CN=$domain" \
+    -addext "subjectAltName=DNS:$domain" \
+    -keyout "$cert_dir/privkey.pem" \
+    -out "$cert_dir/fullchain.pem" >/dev/null 2>&1
+  chmod 0600 "$cert_dir/privkey.pem"
+  chmod 0644 "$cert_dir/fullchain.pem"
+  warn "generated temporary self-signed TLS certificate for $domain; replace with ACME certificate before production"
+}
+
 main() {
   require_root_or_dry_run
   load_env
@@ -42,12 +64,16 @@ main() {
   install_packages
   registry_login
   run mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/www/lumen-acme "$TLS_CERT_DIR"
+  ensure_bootstrap_cert "$PANEL_DOMAIN"
+  ensure_bootstrap_cert "$SUBSCRIPTION_DOMAIN"
   render_template "$REPO_ROOT/deploy/nginx/lumen-http-acme.conf.template" /etc/nginx/sites-available/lumen-http-acme.conf
   render_template "$REPO_ROOT/deploy/nginx/lumen-panel.conf.template" /etc/nginx/sites-available/lumen-panel.conf
   render_template "$REPO_ROOT/deploy/nginx/lumen-subscription.conf.template" /etc/nginx/sites-available/lumen-subscription.conf
   run ln -sfn /etc/nginx/sites-available/lumen-http-acme.conf /etc/nginx/sites-enabled/lumen-http-acme.conf
   run ln -sfn /etc/nginx/sites-available/lumen-panel.conf /etc/nginx/sites-enabled/lumen-panel.conf
   run ln -sfn /etc/nginx/sites-available/lumen-subscription.conf /etc/nginx/sites-enabled/lumen-subscription.conf
+  run nginx -t
+  run systemctl reload nginx
   compose_run config >/dev/null
   compose_pull
   compose_run up -d
