@@ -97,7 +97,7 @@ services:
         condition: service_started
     environment:
       TZ: ${TZ:-UTC}
-      API_BASE_URL: https://${PANEL_DOMAIN}/api
+      API_BASE_URL: https://${PANEL_DOMAIN}
       PORT: ${LUMEN_WEB_INTERNAL_PORT:-3000}
     ports:
       - "127.0.0.1:${LUMEN_WEB_PORT:-3000}:${LUMEN_WEB_INTERNAL_PORT:-3000}"
