@@ -21,6 +21,8 @@ sudo ./scripts/install.sh --config .env --dry-run
 
 Production installs require real domains, ACME email, registry access if needed,
 and image references pinned by digest from a signed release manifest.
+Pre-release smoke runs may set `LUMEN_ALLOW_UNPINNED_IMAGES=true` or pass
+`--allow-unpinned-images`; do not use that override for production releases.
 
 ```bash
 sudo ./scripts/install.sh --config /opt/lumen/.env
@@ -44,7 +46,7 @@ from the private panel/backend over SSH, then outbound node-agent management.
 See `docs/NODE_INSTALL.md` for fallback dry-run and token handling details.
 
 ```bash
-sudo ./scripts/install-node.sh --panel-url https://panel.example.com --install-token-stdin
+sudo ./scripts/install-node.sh --control-plane-url https://panel.example.com --install-token-stdin
 ```
 
 Free mode is represented by `FREE_NODE_LIMIT=3`. Licensed mode is a placeholder
@@ -57,5 +59,6 @@ for f in scripts/*.sh scripts/lib/*.sh; do bash -n "$f"; done
 shellcheck scripts/*.sh scripts/lib/*.sh
 docker compose --env-file .env.example -f deploy/compose/lumen.yml config
 docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
+jq -e '.schema == "lumen.release.v1" and (.images | has("api") and has("web") and has("node_agent") and has("subscription"))' release/manifest.template.json
 ./scripts/secret-scan.sh .
 ```

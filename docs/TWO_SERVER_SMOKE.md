@@ -45,6 +45,18 @@ checks:
   subscription_public_url: https://sub.example.com
 ```
 
+## Secret-free local render
+
+Run these checks from a clean public repo checkout before copying anything to
+the VPS hosts. They do not require real domains, tokens, or generated secrets.
+
+```bash
+docker compose --env-file .env.example -f deploy/compose/lumen.yml config
+docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
+jq -e '.schema == "lumen.release.v1" and (.images | has("api") and has("web") and has("node_agent") and has("subscription"))' release/manifest.template.json
+bash scripts/secret-scan.sh .
+```
+
 ## Panel dry run
 
 Run this before writing any production secrets. If `/tmp/lumen-panel.env` still
@@ -57,6 +69,10 @@ $EDITOR /tmp/lumen-panel.env
 sudo ./scripts/install.sh --config /tmp/lumen-panel.env --dry-run
 docker compose --env-file /tmp/lumen-panel.env -f deploy/compose/lumen.yml config
 ```
+
+For tag-only pre-release private images, set `LUMEN_ALLOW_UNPINNED_IMAGES=true`
+in `/tmp/lumen-panel.env` or pass `--allow-unpinned-images`. Keep the override
+out of production release configs.
 
 ## Panel install
 
@@ -78,10 +94,17 @@ when testing the public installer path or when push provisioning is unavailable.
 
 ```bash
 sudo ./scripts/install-node.sh \
-  --panel-url https://panel.example.com \
+  --control-plane-url https://panel.example.com \
   --node-name smoke-node-01 \
   --install-token-stdin \
   --dry-run
+```
+
+The node dry run does not read stdin even when `--install-token-stdin` is
+present. To render the node compose file with the public template only, run:
+
+```bash
+docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
 ```
 
 For a live fallback, pass the one-time token through stdin or a root-only file as

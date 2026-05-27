@@ -2,11 +2,13 @@
 set -Eeuo pipefail
 
 CONFIG_FILE="/opt/lumen/.env"
+ALLOW_UNPINNED_IMAGES=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --config) CONFIG_FILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) echo "Usage: install.sh [--config PATH] [--dry-run]"; exit 0 ;;
+    --allow-unpinned-images) ALLOW_UNPINNED_IMAGES=1; shift ;;
+    -h|--help) echo "Usage: install.sh [--config PATH] [--dry-run] [--allow-unpinned-images]"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -33,6 +35,9 @@ main() {
     ensure_secret "$key"
   done
   load_env
+  if [ "$ALLOW_UNPINNED_IMAGES" = "1" ]; then
+    LUMEN_ALLOW_UNPINNED_IMAGES=true
+  fi
   validate_images strict
   install_packages
   run mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/www/lumen-acme "$TLS_CERT_DIR"
@@ -49,4 +54,3 @@ main() {
 }
 
 main "$@"
-

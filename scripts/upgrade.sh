@@ -24,8 +24,7 @@ jq_get() {
 main() {
   require_root_or_dry_run
   [ -r "$MANIFEST_FILE" ] || die "--manifest is required"
-  have_cmd jq || die "jq is required"
-  jq -e '.schema == "lumen.release.v1"' "$MANIFEST_FILE" >/dev/null || die "unsupported manifest schema"
+  validate_release_manifest "$MANIFEST_FILE"
   load_env
   backup_args=(--config "$CONFIG_FILE" --allow-plaintext)
   if [ "$DRY_RUN" = "1" ]; then

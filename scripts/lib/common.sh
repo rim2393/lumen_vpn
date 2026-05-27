@@ -122,11 +122,29 @@ compose_run() {
   compose "$@"
 }
 
-validate_images() {
+truthy() {
+  case "${1:-}" in
+    1|true|TRUE|yes|YES|on|ON) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+allow_unpinned_images() {
+  truthy "${LUMEN_ALLOW_UNPINNED_IMAGES:-0}"
+}
+
+validate_image_refs() {
   local strict="${1:-warn}" key value bad=0
-  for key in POSTGRES_IMAGE REDIS_IMAGE LUMEN_API_IMAGE LUMEN_WEB_IMAGE LUMEN_NODE_AGENT_IMAGE LUMEN_SUBSCRIPTION_IMAGE; do
+  if [ "$#" -gt 0 ]; then
+    shift
+  fi
+  [ "$#" -gt 0 ] || die "validate_image_refs requires at least one image variable"
+  for key in "$@"; do
     value="${!key:-}"
-    if ! printf '%s' "$value" | grep -Eq '@sha256:[0-9a-f]{64}$'; then
+    if [ -z "$value" ]; then
+      warn "$key is empty"
+      bad=1
+    elif ! printf '%s' "$value" | grep -Eq '@sha256:[0-9a-f]{64}$'; then
       warn "$key is not pinned by digest"
       bad=1
     elif printf '%s' "$value" | grep -Eq '@sha256:0{64}$'; then
@@ -134,7 +152,36 @@ validate_images() {
       bad=1
     fi
   done
-  [ "$strict" != "strict" ] || [ "$DRY_RUN" = "1" ] || [ "$bad" -eq 0 ] || die "Refusing production run with unpinned/placeholder images"
+  if [ "$strict" = "strict" ] && [ "$DRY_RUN" != "1" ] && [ "$bad" -ne 0 ]; then
+    if allow_unpinned_images; then
+      warn "allowing unpinned/placeholder images because LUMEN_ALLOW_UNPINNED_IMAGES is enabled"
+    else
+      die "Refusing production run with unpinned/placeholder images"
+    fi
+  fi
+}
+
+validate_images() {
+  validate_image_refs "${1:-warn}" POSTGRES_IMAGE REDIS_IMAGE LUMEN_API_IMAGE LUMEN_WEB_IMAGE LUMEN_NODE_AGENT_IMAGE LUMEN_SUBSCRIPTION_IMAGE
+}
+
+validate_release_manifest() {
+  local manifest="$1"
+  have_cmd jq || die "jq is required"
+  jq -e '
+    .schema == "lumen.release.v1"
+    and (.version | type == "string" and length > 0)
+    and (.released_at | type == "string" and length > 0)
+    and (.installer_min_version | type == "string" and length > 0)
+    and (.free_node_limit | type == "number")
+    and (.images.api | type == "string" and length > 0)
+    and (.images.web | type == "string" and length > 0)
+    and (.images.node_agent | type == "string" and length > 0)
+    and (.images.subscription | type == "string" and length > 0)
+    and (.signature.alg | type == "string" and length > 0)
+    and (.signature.kid | type == "string" and length > 0)
+    and (.signature.value | type == "string" and length > 0)
+  ' "$manifest" >/dev/null || die "invalid release manifest"
 }
 
 render_template() {

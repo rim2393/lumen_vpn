@@ -1,21 +1,25 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-PANEL_URL=""
+CONTROL_PLANE_URL=""
 TOKEN_FILE=""
 TOKEN_STDIN=0
 NODE_NAME="manual-node"
 CONFIG_FILE="/opt/lumen-node/.env"
+NODE_AGENT_IMAGE=""
+ALLOW_UNPINNED_IMAGES=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --panel-url) PANEL_URL="$2"; shift 2 ;;
+    --control-plane-url|--panel-url) CONTROL_PLANE_URL="$2"; shift 2 ;;
     --install-token-file) TOKEN_FILE="$2"; shift 2 ;;
     --install-token-stdin) TOKEN_STDIN=1; shift ;;
     --node-name) NODE_NAME="$2"; shift 2 ;;
+    --node-agent-image) NODE_AGENT_IMAGE="$2"; shift 2 ;;
     --config) CONFIG_FILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) echo "Usage: install-node.sh --panel-url URL (--install-token-stdin|--install-token-file PATH)"; exit 0 ;;
+    --allow-unpinned-images) ALLOW_UNPINNED_IMAGES=1; shift ;;
+    -h|--help) echo "Usage: install-node.sh --control-plane-url URL (--install-token-stdin|--install-token-file PATH) [--node-name NAME] [--node-agent-image IMAGE] [--dry-run]"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -23,33 +27,61 @@ done
 # shellcheck source=scripts/lib/common.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
+load_existing_node_env() {
+  if [ -f "$CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    set -a && source "$CONFIG_FILE" && set +a
+  fi
+}
+
 write_node_env() {
+  run mkdir -p "$(dirname "$CONFIG_FILE")"
   {
     printf 'TZ=%s\n' "${TZ:-UTC}"
-    printf 'LUMEN_PANEL_URL=%s\n' "$PANEL_URL"
+    printf 'LUMEN_CONTROL_PLANE_URL=%s\n' "$CONTROL_PLANE_URL"
     printf 'LUMEN_NODE_NAME=%s\n' "$NODE_NAME"
-    printf 'LUMEN_NODE_AGENT_IMAGE=%s\n' "${LUMEN_NODE_AGENT_IMAGE:-ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000}"
+    printf 'LUMEN_NODE_AGENT_IMAGE=%s\n' "$LUMEN_NODE_AGENT_IMAGE"
+    printf 'LUMEN_NODE_STATE_DIR=%s\n' "$LUMEN_NODE_STATE_DIR"
+    printf 'LUMEN_NODE_SECRETS_DIR=%s\n' "$LUMEN_NODE_SECRETS_DIR"
+    printf 'LUMEN_ALLOW_UNPINNED_IMAGES=%s\n' "${LUMEN_ALLOW_UNPINNED_IMAGES:-false}"
   } >"$CONFIG_FILE"
   chmod 0600 "$CONFIG_FILE"
 }
 
 main() {
   require_root_or_dry_run
-  [ -n "$PANEL_URL" ] || die "--panel-url is required"
-  printf '%s' "$PANEL_URL" | grep -Eq '^https://' || die "--panel-url must use https"
+  [ -z "${LUMEN_INSTALL_TOKEN:-}" ] || die "LUMEN_INSTALL_TOKEN env is not supported; use --install-token-stdin or --install-token-file"
+  load_existing_node_env
+  [ -z "${LUMEN_INSTALL_TOKEN:-}" ] || die "LUMEN_INSTALL_TOKEN env is not supported; use --install-token-stdin or --install-token-file"
+  CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-${LUMEN_CONTROL_PLANE_URL:-${LUMEN_PANEL_URL:-}}}"
+  if [ "$NODE_NAME" = "manual-node" ] && [ -n "${LUMEN_NODE_NAME:-}" ]; then
+    NODE_NAME="$LUMEN_NODE_NAME"
+  fi
+  LUMEN_NODE_AGENT_IMAGE="${NODE_AGENT_IMAGE:-${LUMEN_NODE_AGENT_IMAGE:-ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000}}"
+  LUMEN_NODE_STATE_DIR="${LUMEN_NODE_STATE_DIR:-/opt/lumen-node/state}"
+  LUMEN_NODE_SECRETS_DIR="${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}"
+  if [ "$ALLOW_UNPINNED_IMAGES" = "1" ]; then
+    LUMEN_ALLOW_UNPINNED_IMAGES=true
+  fi
+  [ -n "$CONTROL_PLANE_URL" ] || die "--control-plane-url is required"
+  printf '%s' "$CONTROL_PLANE_URL" | grep -Eq '^https://' || die "--control-plane-url must use https"
   [ "$TOKEN_STDIN" = "1" ] || [ -n "$TOKEN_FILE" ] || die "install token source is required"
-  run mkdir -p /opt/lumen-node/secrets /opt/lumen-node/state
+  validate_image_refs strict LUMEN_NODE_AGENT_IMAGE
+  run mkdir -p "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
+  run chmod 0700 "$LUMEN_NODE_SECRETS_DIR"
   if [ "$DRY_RUN" = "1" ]; then
     log "dry-run would create $CONFIG_FILE with non-secret node settings"
-    log "dry-run node env: LUMEN_PANEL_URL=$PANEL_URL LUMEN_NODE_NAME=$NODE_NAME"
+    log "dry-run node env: LUMEN_CONTROL_PLANE_URL=$CONTROL_PLANE_URL LUMEN_NODE_NAME=$NODE_NAME"
     log "dry-run does not read, print, or write the install token"
   else
     write_node_env
     if [ "$TOKEN_STDIN" = "1" ]; then
       IFS= read -r token
-      printf '%s\n' "$token" > /opt/lumen-node/secrets/install-token
+      [ -n "$token" ] || die "empty install token"
+      ( umask 077 && printf '%s\n' "$token" > "$LUMEN_NODE_SECRETS_DIR/install-token" )
     else
-      install -m 0600 "$TOKEN_FILE" /opt/lumen-node/secrets/install-token
+      [ -r "$TOKEN_FILE" ] || die "install token file is not readable"
+      install -m 0600 "$TOKEN_FILE" "$LUMEN_NODE_SECRETS_DIR/install-token"
     fi
   fi
   COMPOSE_FILE="$REPO_ROOT/deploy/compose/lumen-node.yml"

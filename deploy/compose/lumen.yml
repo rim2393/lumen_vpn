@@ -55,13 +55,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment: *app-env
+    environment:
+      <<: *app-env
+      PORT: ${LUMEN_API_INTERNAL_PORT:-8000}
     volumes:
       - ${LUMEN_DATA_DIR:-/opt/lumen/data}/uploads:/var/lib/lumen/uploads
       - ${LUMEN_DATA_DIR:-/opt/lumen/data}/runtime:/var/lib/lumen/runtime
       - ${LUMEN_SECRETS_DIR:-/opt/lumen/secrets}:/run/lumen/secrets:ro
     ports:
-      - "127.0.0.1:${LUMEN_API_PORT:-8080}:8080"
+      - "127.0.0.1:${LUMEN_API_PORT:-8080}:${LUMEN_API_INTERNAL_PORT:-8000}"
 
   worker:
     image: ${LUMEN_API_IMAGE}
@@ -84,8 +86,9 @@ services:
     environment:
       TZ: ${TZ:-UTC}
       API_BASE_URL: https://${PANEL_DOMAIN}/api
+      PORT: ${LUMEN_WEB_INTERNAL_PORT:-3000}
     ports:
-      - "127.0.0.1:${LUMEN_WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${LUMEN_WEB_PORT:-3000}:${LUMEN_WEB_INTERNAL_PORT:-3000}"
 
   subscription:
     image: ${LUMEN_SUBSCRIPTION_IMAGE}
@@ -95,12 +98,12 @@ services:
         condition: service_started
     environment:
       TZ: ${TZ:-UTC}
-      API_INTERNAL_URL: http://api:8080
+      API_INTERNAL_URL: http://api:${LUMEN_API_INTERNAL_PORT:-8000}
       SUBSCRIPTION_PUBLIC_URL: https://${SUBSCRIPTION_DOMAIN}
+      PORT: ${LUMEN_SUBSCRIPTION_INTERNAL_PORT:-8080}
     ports:
-      - "127.0.0.1:${LUMEN_SUBSCRIPTION_PORT:-8081}:8080"
+      - "127.0.0.1:${LUMEN_SUBSCRIPTION_PORT:-8081}:${LUMEN_SUBSCRIPTION_INTERNAL_PORT:-8080}"
 
 volumes:
   postgres_data:
   redis_data:
-

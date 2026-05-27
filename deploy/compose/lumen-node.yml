@@ -6,17 +6,16 @@ services:
     restart: unless-stopped
     environment:
       TZ: ${TZ:-UTC}
-      LUMEN_PANEL_URL: ${LUMEN_PANEL_URL:-https://panel.example.com}
+      LUMEN_CONTROL_PLANE_URL: ${LUMEN_CONTROL_PLANE_URL:-https://panel.example.com}
       LUMEN_NODE_NAME: ${LUMEN_NODE_NAME:-manual-node}
       LUMEN_INSTALL_TOKEN_FILE: /run/lumen-node/install-token
       LUMEN_STATE_DIR: /var/lib/lumen-node
     volumes:
-      - /opt/lumen-node/state:/var/lib/lumen-node
-      - /opt/lumen-node/secrets:/run/lumen-node:ro
+      - ${LUMEN_NODE_STATE_DIR:-/opt/lumen-node/state}:/var/lib/lumen-node
+      - ${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}:/run/lumen-node:ro
       - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - NET_ADMIN
       - NET_RAW
     security_opt:
       - no-new-privileges:true
-

@@ -13,13 +13,26 @@ production config at a private path such as `/opt/lumen/.env` with mode `0600`.
 5. Run `sudo ./scripts/install.sh --config /opt/lumen/.env --dry-run`.
 6. Run `sudo ./scripts/install.sh --config /opt/lumen/.env`.
 
+`LUMEN_API_PORT`, `LUMEN_WEB_PORT`, and `LUMEN_SUBSCRIPTION_PORT` are
+loopback host ports used by Nginx. `LUMEN_API_INTERNAL_PORT`,
+`LUMEN_WEB_INTERNAL_PORT`, and `LUMEN_SUBSCRIPTION_INTERNAL_PORT` are container
+ports exposed by the private images. The API image contract defaults to internal
+port `8000`; Nginx still reaches it through host loopback port `8080`.
+
+Production installs refuse unpinned or placeholder image digests. For a
+pre-release smoke run against tag-only private images, set
+`LUMEN_ALLOW_UNPINNED_IMAGES=true` in the private config or pass
+`--allow-unpinned-images`. Remove that override before release validation.
+
 ## Dry-run config behavior
 
-Dry-run is for command review and compose rendering. If the requested config file
-does not exist, the installer reads `.env.example` and logs that it is using the
-template. If a config contains `GENERATED_AT_INSTALL`, `GENERATE`, or
-`CHANGE_ME`, dry-run logs which keys would be written but suppresses the values
-and leaves the file unchanged.
+Dry-run is for command review before applying host changes. Pair it with
+`docker compose --env-file <config> -f deploy/compose/lumen.yml config` when you
+need a full compose render. If the requested config file does not exist, the
+installer reads `.env.example` and logs that it is using the template. If a
+config contains `GENERATED_AT_INSTALL`, `GENERATE`, or `CHANGE_ME`, dry-run logs
+which keys would be written but suppresses the values and leaves the file
+unchanged.
 
 The non-dry-run install is the step that writes generated secrets to the private
 config file on the target host. Do not copy those values back into this repo.

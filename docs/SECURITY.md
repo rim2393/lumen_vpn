@@ -12,9 +12,14 @@ Use file-based secret inputs:
 
 - `REGISTRY_TOKEN_FILE`
 - `LICENSE_KEY_FILE`
+- `LUMEN_INSTALL_TOKEN_FILE`
 - `TELEGRAM_BOT_TOKEN_FILE`
 - `SMTP_PASSWORD_FILE`
 - `GOOGLE_OAUTH_CLIENT_SECRET_FILE`
+
+Do not pass node install tokens with a `LUMEN_INSTALL_TOKEN` environment
+variable. The node installer writes the one-time token to a root-only file and
+the node-agent receives only the file path.
 
 Support bundles redact common secret keys by default and can redact IP addresses
 with `--redact-ips`.
