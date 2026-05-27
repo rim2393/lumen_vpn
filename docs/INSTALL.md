@@ -1,6 +1,6 @@
 # Install
 
-Supported hosts: Debian 12 or Ubuntu 22.04/24.04 with systemd, root/sudo,
+Supported hosts: Debian 12 or Ubuntu 22.04/24.04/26.04 with systemd, root/sudo,
 ports 80/443, public DNS, Docker Compose v2, Nginx, and acme.sh.
 
 Real passwords and generated runtime configs must not be committed. Keep the
