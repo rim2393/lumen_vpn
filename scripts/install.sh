@@ -3,12 +3,14 @@ set -Eeuo pipefail
 
 CONFIG_FILE="/opt/lumen/.env"
 ALLOW_UNPINNED_IMAGES=0
+INIT_CONFIG=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --config) CONFIG_FILE="$2"; shift 2 ;;
+    --init-config) INIT_CONFIG=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --allow-unpinned-images) ALLOW_UNPINNED_IMAGES=1; shift ;;
-    -h|--help) echo "Usage: install.sh [--config PATH] [--dry-run] [--allow-unpinned-images]"; exit 0 ;;
+    -h|--help) echo "Usage: install.sh [--config PATH] [--init-config] [--dry-run] [--allow-unpinned-images]"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -55,11 +57,72 @@ ensure_bootstrap_cert() {
   warn "generated temporary self-signed TLS certificate for $domain; replace with ACME certificate before production"
 }
 
+acme_binary() {
+  if have_cmd acme.sh; then
+    command -v acme.sh
+    return 0
+  fi
+  if [ -x "$HOME/.acme.sh/acme.sh" ]; then
+    printf '%s\n' "$HOME/.acme.sh/acme.sh"
+    return 0
+  fi
+  return 1
+}
+
+ensure_acme_sh() {
+  local installer
+  if acme_binary >/dev/null 2>&1; then
+    return 0
+  fi
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would install acme.sh for ACME certificates"
+    return 0
+  fi
+  installer="$(mktemp)"
+  curl -fsSL https://get.acme.sh -o "$installer"
+  run sh "$installer" "email=$ACME_EMAIL"
+  rm -f "$installer"
+}
+
+issue_acme_cert() {
+  local domain="$1" cert_dir acme
+  [ -n "$domain" ] || return 0
+  truthy "${LUMEN_ACME_ENABLED:-true}" || {
+    warn "ACME disabled; keeping bootstrap certificate for $domain"
+    return 0
+  }
+  cert_dir="$TLS_CERT_DIR/$domain"
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would issue ACME certificate for $domain using webroot /var/www/lumen-acme"
+    return 0
+  fi
+  ensure_acme_sh
+  acme="$(acme_binary)" || die "acme.sh install failed"
+  run "$acme" --set-default-ca --server letsencrypt
+  run "$acme" --issue -d "$domain" -w /var/www/lumen-acme --keylength ec-256
+  run "$acme" --install-cert -d "$domain" --ecc \
+    --fullchain-file "$cert_dir/fullchain.pem" \
+    --key-file "$cert_dir/privkey.pem" \
+    --reloadcmd "systemctl reload nginx"
+  run chmod 0600 "$cert_dir/privkey.pem"
+  run chmod 0644 "$cert_dir/fullchain.pem"
+}
+
 main() {
+  local -a configure_args
   require_root_or_dry_run
+  if [ "$INIT_CONFIG" = "1" ] || { [ ! -f "$CONFIG_FILE" ] && [ "$DRY_RUN" != "1" ] && [ -t 0 ]; }; then
+    configure_args=(--config "$CONFIG_FILE")
+    if [ "$INIT_CONFIG" = "1" ]; then
+      configure_args+=(--force)
+    fi
+    "$REPO_ROOT/scripts/configure.sh" "${configure_args[@]}"
+  fi
   load_env
+  validate_panel_config
+  validate_panel_ports_available
   ensure_dirs
-  for key in POSTGRES_PASSWORD REDIS_PASSWORD JWT_SECRET REFRESH_SECRET API_TOKEN_PEPPER NODE_TOKEN_PEPPER SESSION_HASH_PEPPER LUMEN_BOOTSTRAP_ADMIN_API_KEY ENCRYPTION_KEY WEBHOOK_SIGNING_SECRET NODE_CA_SEED MANIFEST_SIGNING_SEED RECOVERY_KEY; do
+  for key in POSTGRES_PASSWORD REDIS_PASSWORD JWT_SECRET REFRESH_SECRET API_TOKEN_PEPPER NODE_TOKEN_PEPPER SESSION_HASH_PEPPER LUMEN_BOOTSTRAP_ADMIN_API_KEY ENCRYPTION_KEY WEBHOOK_SIGNING_SECRET NODE_CA_SEED MANIFEST_SIGNING_SEED RECOVERY_KEY FIRST_ADMIN_PASSWORD; do
     ensure_secret "$key"
   done
   load_env
@@ -80,8 +143,13 @@ main() {
   run ln -sfn /etc/nginx/sites-available/lumen-subscription.conf /etc/nginx/sites-enabled/lumen-subscription.conf
   run nginx -t
   run systemctl reload nginx
+  issue_acme_cert "$PANEL_DOMAIN"
+  issue_acme_cert "$SUBSCRIPTION_DOMAIN"
+  run nginx -t
+  run systemctl reload nginx
   compose_run config >/dev/null
   compose_pull
+  compose_run run --rm api alembic upgrade head
   compose_run up -d
   log "install scaffold complete: https://$PANEL_DOMAIN"
 }

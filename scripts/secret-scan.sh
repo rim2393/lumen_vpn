@@ -23,6 +23,10 @@ scan "GitHub token" 'gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{40,}'
 scan "AWS key" 'AKIA[0-9A-Z]{16}'
 scan "private key" '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----'
 scan "subscription token URL" 'https?://[^ ]+/api/sub/[A-Za-z0-9._~-]{20,}'
+scan "Telegram bot token" '[0-9]{8,10}:[A-Za-z0-9_-]{35,}'
+scan "JWT" 'eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}'
+scan "Docker auth blob" '"auth"[[:space:]]*:[[:space:]]*"[A-Za-z0-9+/=]{20,}"'
+scan "Lumen API/license token" 'lumen_(sk|rt|nt|lic)_[A-Za-z0-9._~-]{20,}'
 
 if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tracked="$(git -C "$ROOT" ls-files | grep -E '(^|/)(\.env|id_rsa|id_ed25519|.*\.(pem|p12|pfx|key))$' || true)"

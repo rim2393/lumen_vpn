@@ -41,7 +41,7 @@ node:
   install_token_source: stdin-or-/root/lumen-node-install-token
 
 checks:
-  panel_health_url: https://panel.example.com/api/healthz
+  panel_health_url: https://panel.example.com/api/v1/health/live
   subscription_public_url: https://sub.example.com
 ```
 
@@ -81,11 +81,22 @@ release values first, then run the installer.
 
 ```bash
 sudo install -m 0600 .env.example /opt/lumen/.env
-sudoedit /opt/lumen/.env
+sudo ./scripts/configure.sh --config /opt/lumen/.env --force
 sudo ./scripts/install.sh --config /opt/lumen/.env --dry-run
 sudo ./scripts/install.sh --config /opt/lumen/.env
 sudo ./scripts/doctor.sh --config /opt/lumen/.env
 ```
+
+Required live evidence before expanding beyond two servers:
+
+- `docker compose --env-file /opt/lumen/.env -f deploy/compose/lumen.yml ps`
+  shows `postgres`, `redis`, `api`, `web`, and `subscription` running.
+- `curl -fsS https://panel.example.com/api/v1/health/live` returns success.
+- `curl -fsS https://sub.example.com` returns the subscription front door.
+- `sudo ./scripts/backup.sh --config /opt/lumen/.env --passphrase-file /root/lumen-backup.pass`
+  creates an encrypted backup.
+- `sudo ./scripts/support-bundle.sh --config /opt/lumen/.env --redact-ips`
+  creates a sanitized support bundle.
 
 ## Node fallback smoke
 
@@ -110,3 +121,17 @@ docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
 For a live fallback, pass the one-time token through stdin or a root-only file as
 documented in `docs/NODE_INSTALL.md`. Remove the token file after bootstrap and
 confirm the node-agent is visible from the panel.
+
+## Upgrade and rollback smoke
+
+Use a signed manifest produced by the private CI pipeline, not
+`release/manifest.template.json`.
+
+```bash
+sudo ./scripts/upgrade.sh \
+  --config /opt/lumen/.env \
+  --manifest /secure/lumen-release.json \
+  --backup-passphrase-file /root/lumen-backup.pass \
+  --dry-run
+sudo ./scripts/rollback.sh --config /opt/lumen/.env --force --dry-run
+```

@@ -62,6 +62,11 @@ write_node_env() {
     printf 'LUMEN_NODE_STATE_DIR=%s\n' "$LUMEN_NODE_STATE_DIR"
     printf 'LUMEN_NODE_SECRETS_DIR=%s\n' "$LUMEN_NODE_SECRETS_DIR"
     printf 'LUMEN_ALLOW_UNPINNED_IMAGES=%s\n' "${LUMEN_ALLOW_UNPINNED_IMAGES:-false}"
+    printf 'LUMEN_SKIP_IMAGE_PULL=%s\n' "${LUMEN_SKIP_IMAGE_PULL:-false}"
+    printf 'REGISTRY_HOST=%s\n' "${REGISTRY_HOST:-}"
+    printf 'REGISTRY_USERNAME=%s\n' "${REGISTRY_USERNAME:-}"
+    printf 'REGISTRY_TOKEN_FILE=%s\n' "${REGISTRY_TOKEN_FILE:-}"
+    printf 'REGISTRY_REQUIRED=%s\n' "${REGISTRY_REQUIRED:-false}"
     if [ "$INSECURE_TLS" = "1" ]; then
       printf 'NODE_TLS_REJECT_UNAUTHORIZED=0\n'
     fi
@@ -89,6 +94,8 @@ main() {
   fi
   [ -n "$CONTROL_PLANE_URL" ] || die "--control-plane-url is required"
   printf '%s' "$CONTROL_PLANE_URL" | grep -Eq '^https://' || die "--control-plane-url must use https"
+  LUMEN_CONTROL_PLANE_URL="$CONTROL_PLANE_URL"
+  validate_node_config
   [ "$TOKEN_STDIN" = "1" ] || [ -n "$TOKEN_FILE" ] || die "install token source is required"
   validate_image_refs strict LUMEN_NODE_AGENT_IMAGE
   install_node_packages

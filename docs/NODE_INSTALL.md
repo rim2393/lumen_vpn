@@ -59,6 +59,12 @@ If node-agent images are private, set `REGISTRY_HOST`, `REGISTRY_USERNAME`, and
 `REGISTRY_TOKEN_FILE` in the node config before install. The installer performs
 `docker login` through stdin and does not print the token.
 
+The node-agent container mounts `/var/run/docker.sock` and receives
+`NET_ADMIN`/`NET_RAW` because it must apply network runtime changes. Treat each
+node as a trusted execution target, use one-time install tokens, remove fallback
+token files after bootstrap, and do not share node hosts with unrelated
+workloads.
+
 `--panel-url` remains accepted as a compatibility alias for
 `--control-plane-url`, but new docs and automation should use the control-plane
 name.

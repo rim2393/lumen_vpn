@@ -20,6 +20,7 @@ done
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
 main() {
+  local ts out work
   require_root_or_dry_run
   load_env
   [ -n "$PASSPHRASE_FILE" ] || [ "$ALLOW_PLAINTEXT" = "1" ] || die "backup contains secrets; use --passphrase-file or --allow-plaintext"
@@ -32,10 +33,12 @@ main() {
   fi
   work="$(mktemp -d)"
   trap 'rm -rf -- "$work"' EXIT
-  mkdir -p "$work/db" "$work/config" "$work/secrets"
+  mkdir -p "$work/db" "$work/config" "$work/secrets" "$work/data"
   compose exec -T postgres pg_dump -U lumen -d lumen --format=custom >"$work/db/postgres.dump"
   install -m 0600 "$CONFIG_FILE" "$work/config/lumen.env"
   cp -a "$LUMEN_SECRETS_DIR/." "$work/secrets/" 2>/dev/null || true
+  cp -a "$LUMEN_DATA_DIR/uploads" "$work/data/" 2>/dev/null || true
+  cp -a "$LUMEN_DATA_DIR/runtime" "$work/data/" 2>/dev/null || true
   tar -C "$work" -czf "$out" .
   chmod 0600 "$out"
   if [ -n "$PASSPHRASE_FILE" ]; then

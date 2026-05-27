@@ -22,4 +22,9 @@ variable. The node installer writes the one-time token to a root-only file and
 the node-agent receives only the file path.
 
 Support bundles redact common secret keys by default and can redact IP addresses
-with `--redact-ips`.
+with `--redact-ips`. Compose logs are passed through the same redactor before
+they are added to the bundle.
+
+The fallback node installer grants the node-agent Docker socket access and
+network capabilities. Only install nodes you trust, rotate one-time install
+tokens, and avoid colocating unrelated workloads on node hosts.

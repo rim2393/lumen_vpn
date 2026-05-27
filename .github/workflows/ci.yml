@@ -27,6 +27,11 @@ jobs:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - run: docker compose --env-file .env.example -f deploy/compose/lumen.yml config >/tmp/lumen.yml
       - run: docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config >/tmp/lumen-node.yml
+      - run: bash ./scripts/configure.sh --config /tmp/lumen-ci.env --non-interactive --dry-run
+      - run: bash ./scripts/install.sh --config .env.example --dry-run
+      - run: bash ./scripts/install-node.sh --control-plane-url https://panel.example.com --install-token-stdin --dry-run
+      - run: bash ./scripts/backup.sh --config .env.example --allow-plaintext --dry-run
+      - run: bash ./scripts/rollback.sh --config .env.example --state-dir /tmp/lumen-upgrade-state --force --dry-run
 
   secret-scan:
     runs-on: ubuntu-24.04
@@ -39,4 +44,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-      - run: jq -e '.schema == "lumen.release.v1"' release/manifest.template.json
+      - run: bash ./scripts/validate-manifest.sh --allow-template release/manifest.template.json
+      - run: |
+          if bash ./scripts/validate-manifest.sh release/manifest.template.json; then
+            echo "template manifest must not pass strict production validation" >&2
+            exit 1
+          fi

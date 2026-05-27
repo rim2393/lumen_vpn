@@ -187,8 +187,13 @@ validate_images() {
 registry_login() {
   local host="${REGISTRY_HOST:-}" username="${REGISTRY_USERNAME:-}" token_file="${REGISTRY_TOKEN_FILE:-}"
   [ -n "$host" ] || return 0
-  [ -n "$username" ] || return 0
-  [ -n "$token_file" ] || return 0
+  if [ -z "$username" ] || [ -z "$token_file" ]; then
+    if truthy "${REGISTRY_REQUIRED:-0}"; then
+      die "REGISTRY_REQUIRED is enabled, but REGISTRY_USERNAME or REGISTRY_TOKEN_FILE is empty"
+    fi
+    warn "registry credentials are not configured; image pull will work only for public images"
+    return 0
+  fi
   if [ "$DRY_RUN" = "1" ]; then
     log "dry-run would authenticate Docker registry $host as $username using token file $token_file"
     return 0
@@ -218,10 +223,24 @@ validate_release_manifest() {
     and (.images.web | type == "string" and length > 0)
     and (.images.node_agent | type == "string" and length > 0)
     and (.images.subscription | type == "string" and length > 0)
+    and ([.images.api, .images.web, .images.node_agent, .images.subscription] | all(test("@sha256:[0-9a-f]{64}$")))
     and (.signature.alg | type == "string" and length > 0)
     and (.signature.kid | type == "string" and length > 0)
     and (.signature.value | type == "string" and length > 0)
+    and (.signature.kid != "release-signing-key-id")
+    and (.signature.value != "BASE64_SIGNATURE_PLACEHOLDER")
   ' "$manifest" >/dev/null || die "invalid release manifest"
+}
+
+validate_release_manifest_template() {
+  local manifest="$1"
+  have_cmd jq || die "jq is required"
+  jq -e '
+    .schema == "lumen.release.v1"
+    and (.version | type == "string" and length > 0)
+    and ([.images.api, .images.web, .images.node_agent, .images.subscription] | all(test("@sha256:[0-9a-f]{64}$")))
+    and (.signature.value == "BASE64_SIGNATURE_PLACEHOLDER")
+  ' "$manifest" >/dev/null || die "invalid release manifest template"
 }
 
 render_template() {
@@ -238,4 +257,79 @@ redact_stream() {
   sed -E \
     -e 's#(PASSWORD|SECRET|TOKEN|PEPPER|KEY|SEED)=.*#\1=<redacted>#g' \
     -e 's#(password|secret|token|private_key|license_key)([" ]*[:=][" ]*)[^" ,]+#\1\2<redacted>#gi'
+}
+
+validate_domain() {
+  local key="$1" value="$2"
+  [ -n "$value" ] || die "$key is required"
+  printf '%s' "$value" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$' \
+    || die "$key must be a DNS hostname, got: $value"
+}
+
+validate_email() {
+  local key="$1" value="$2"
+  [ -n "$value" ] || die "$key is required"
+  printf '%s' "$value" | grep -Eq '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' \
+    || die "$key must be an email address"
+}
+
+validate_port() {
+  local key="$1" value="$2"
+  printf '%s' "$value" | grep -Eq '^[0-9]+$' || die "$key must be numeric"
+  [ "$value" -ge 1 ] && [ "$value" -le 65535 ] || die "$key must be in range 1..65535"
+}
+
+validate_https_url() {
+  local key="$1" value="$2"
+  [ -n "$value" ] || die "$key is required"
+  printf '%s' "$value" | grep -Eq '^https://[^[:space:]]+$' || die "$key must be an https URL"
+}
+
+is_example_domain() {
+  printf '%s' "$1" | grep -Eqi '(^|\.)example\.(com|net|org)$'
+}
+
+check_distinct_host_ports() {
+  local api="$1" web="$2" sub="$3"
+  [ "$api" != "$web" ] || die "LUMEN_API_PORT and LUMEN_WEB_PORT cannot both be $api"
+  [ "$api" != "$sub" ] || die "LUMEN_API_PORT and LUMEN_SUBSCRIPTION_PORT cannot both be $api"
+  [ "$web" != "$sub" ] || die "LUMEN_WEB_PORT and LUMEN_SUBSCRIPTION_PORT cannot both be $web"
+}
+
+check_local_port_available() {
+  local port="$1" label="$2"
+  [ "$DRY_RUN" = "1" ] && return 0
+  truthy "${LUMEN_SKIP_PORT_CHECK:-0}" && return 0
+  if have_cmd ss && ss -ltn | awk '{print $4}' | grep -Eq "[:.]$port$"; then
+    die "$label port $port is already listening on this host. Change the port in $CONFIG_FILE or stop the conflicting service."
+  fi
+}
+
+validate_panel_config() {
+  validate_domain PANEL_DOMAIN "${PANEL_DOMAIN:-}"
+  validate_domain SUBSCRIPTION_DOMAIN "${SUBSCRIPTION_DOMAIN:-}"
+  validate_email ACME_EMAIL "${ACME_EMAIL:-}"
+  [ "$PANEL_DOMAIN" != "$SUBSCRIPTION_DOMAIN" ] || die "PANEL_DOMAIN and SUBSCRIPTION_DOMAIN must be different hostnames"
+  if [ "$DRY_RUN" != "1" ]; then
+    ! is_example_domain "$PANEL_DOMAIN" || die "PANEL_DOMAIN still uses an example domain"
+    ! is_example_domain "$SUBSCRIPTION_DOMAIN" || die "SUBSCRIPTION_DOMAIN still uses an example domain"
+  fi
+  validate_port LUMEN_API_PORT "${LUMEN_API_PORT:-8080}"
+  validate_port LUMEN_WEB_PORT "${LUMEN_WEB_PORT:-3000}"
+  validate_port LUMEN_SUBSCRIPTION_PORT "${LUMEN_SUBSCRIPTION_PORT:-8081}"
+  check_distinct_host_ports "${LUMEN_API_PORT:-8080}" "${LUMEN_WEB_PORT:-3000}" "${LUMEN_SUBSCRIPTION_PORT:-8081}"
+}
+
+validate_panel_ports_available() {
+  check_local_port_available "${LUMEN_API_PORT:-8080}" "Panel API loopback"
+  check_local_port_available "${LUMEN_WEB_PORT:-3000}" "Panel web loopback"
+  check_local_port_available "${LUMEN_SUBSCRIPTION_PORT:-8081}" "Subscription loopback"
+}
+
+validate_node_config() {
+  validate_https_url LUMEN_CONTROL_PLANE_URL "${LUMEN_CONTROL_PLANE_URL:-}"
+  if [ "$DRY_RUN" != "1" ]; then
+    ! printf '%s' "${LUMEN_CONTROL_PLANE_URL:-}" | grep -Eqi 'https://[^/]*example\.(com|net|org)(/|$)' \
+      || die "LUMEN_CONTROL_PLANE_URL still uses an example domain"
+  fi
 }

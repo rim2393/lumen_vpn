@@ -22,6 +22,7 @@ done
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
 main() {
+  local work archive
   require_root_or_dry_run
   [ "$FORCE" = "1" ] || die "restore is destructive; pass --force"
   [ -r "$BACKUP_FILE" ] || die "backup not readable"
@@ -44,6 +45,7 @@ main() {
   load_env
   ensure_dirs
   cp -a "$work/extract/secrets/." "$LUMEN_SECRETS_DIR/" 2>/dev/null || true
+  cp -a "$work/extract/data/." "$LUMEN_DATA_DIR/" 2>/dev/null || true
   compose_run up -d postgres redis
   compose exec -T postgres pg_restore --clean --if-exists -U lumen -d lumen <"$work/extract/db/postgres.dump"
   compose_run up -d

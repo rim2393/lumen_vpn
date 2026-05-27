@@ -19,7 +19,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 check() {
   name="$1"
   shift
-  if "$@" >/dev/null 2>&1; then
+  if ( "$@" ) >/dev/null 2>&1; then
     printf '%-24s ok\n' "$name"
   else
     printf '%-24s fail\n' "$name"
@@ -27,11 +27,25 @@ check() {
   fi
 }
 
+check_tls_file() {
+  local domain="$1" file="$2"
+  [ "$DRY_RUN" = "1" ] && return 0
+  [ -n "$domain" ] || return 1
+  [ -r "$TLS_CERT_DIR/$domain/$file" ]
+}
+
 main() {
   load_env
   check docker have_cmd docker
   check curl have_cmd curl
   check openssl have_cmd openssl
+  check nginx have_cmd nginx
+  check config validate_panel_config
+  check loopback-ports validate_panel_ports_available
+  check panel-cert check_tls_file "$PANEL_DOMAIN" fullchain.pem
+  check panel-key check_tls_file "$PANEL_DOMAIN" privkey.pem
+  check subscription-cert check_tls_file "$SUBSCRIPTION_DOMAIN" fullchain.pem
+  check subscription-key check_tls_file "$SUBSCRIPTION_DOMAIN" privkey.pem
   check compose-render compose config
   validate_images warn || true
   if [ "${FREE_NODE_LIMIT:-}" = "3" ]; then

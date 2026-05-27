@@ -8,3 +8,7 @@
 - Free mode supports three active nodes through `FREE_NODE_LIMIT=3`.
 - Push node provisioning lives in the private panel/backend; this repo provides
   only fallback node bootstrap.
+- Upgrade backups require encryption by default. Plaintext upgrade backups need
+  explicit `--allow-plaintext-backup` and are for isolated smoke runs only.
+- Signed release manifests must be used for upgrade. The public template is
+  valid only with `scripts/validate-manifest.sh --allow-template`.

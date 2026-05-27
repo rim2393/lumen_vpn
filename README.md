@@ -14,9 +14,8 @@ only in root-only files on the target hosts.
 ## Quick start
 
 ```bash
-cp .env.example .env
-$EDITOR .env
-sudo ./scripts/install.sh --config .env --dry-run
+sudo ./scripts/configure.sh --config /opt/lumen/.env
+sudo ./scripts/install.sh --config /opt/lumen/.env --dry-run
 ```
 
 Production installs require real domains, ACME email, registry access if needed,
@@ -37,7 +36,8 @@ and runbook in `docs/TWO_SERVER_SMOKE.md`.
 sudo ./scripts/doctor.sh --config /opt/lumen/.env
 sudo ./scripts/backup.sh --config /opt/lumen/.env --passphrase-file /root/lumen-backup.pass
 sudo ./scripts/restore.sh --config /opt/lumen/.env --backup /secure/backup.tar.gz.enc --passphrase-file /root/lumen-backup.pass --force
-sudo ./scripts/upgrade.sh --config /opt/lumen/.env --manifest release/manifest.template.json --dry-run
+sudo ./scripts/upgrade.sh --config /opt/lumen/.env --manifest /secure/lumen-release.json --backup-passphrase-file /root/lumen-backup.pass --dry-run
+sudo ./scripts/rollback.sh --config /opt/lumen/.env --state-dir /opt/lumen/backups/upgrade-state/<timestamp> --force
 sudo ./scripts/support-bundle.sh --config /opt/lumen/.env --redact-ips
 ```
 
@@ -49,8 +49,9 @@ See `docs/NODE_INSTALL.md` for fallback dry-run and token handling details.
 sudo ./scripts/install-node.sh --control-plane-url https://panel.example.com --install-token-stdin
 ```
 
-Free mode is represented by `FREE_NODE_LIMIT=3`. Licensed mode is a placeholder
-until the private license service is connected.
+Free mode is represented by `FREE_NODE_LIMIT=3`. Licensed mode is connected by
+the private control plane and central license service; this public repo only
+stores installer fields and docs.
 
 ## Local checks
 
@@ -59,6 +60,6 @@ for f in scripts/*.sh scripts/lib/*.sh; do bash -n "$f"; done
 shellcheck scripts/*.sh scripts/lib/*.sh
 docker compose --env-file .env.example -f deploy/compose/lumen.yml config
 docker compose --env-file .env.example -f deploy/compose/lumen-node.yml config
-jq -e '.schema == "lumen.release.v1" and (.images | has("api") and has("web") and has("node_agent") and has("subscription"))' release/manifest.template.json
+./scripts/validate-manifest.sh --allow-template release/manifest.template.json
 ./scripts/secret-scan.sh .
 ```
