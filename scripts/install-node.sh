@@ -63,6 +63,8 @@ write_node_env() {
     printf 'LUMEN_NODE_SECRETS_DIR=%s\n' "$LUMEN_NODE_SECRETS_DIR"
     printf 'LUMEN_ALLOW_UNPINNED_IMAGES=%s\n' "${LUMEN_ALLOW_UNPINNED_IMAGES:-false}"
     printf 'LUMEN_SKIP_IMAGE_PULL=%s\n' "${LUMEN_SKIP_IMAGE_PULL:-false}"
+    printf 'LUMEN_DRY_RUN=%s\n' "${LUMEN_DRY_RUN:-true}"
+    printf 'LUMEN_ENABLE_LIVE_SMOKE=%s\n' "${LUMEN_ENABLE_LIVE_SMOKE:-false}"
     printf 'REGISTRY_HOST=%s\n' "${REGISTRY_HOST:-}"
     printf 'REGISTRY_USERNAME=%s\n' "${REGISTRY_USERNAME:-}"
     printf 'REGISTRY_TOKEN_FILE=%s\n' "${REGISTRY_TOKEN_FILE:-}"

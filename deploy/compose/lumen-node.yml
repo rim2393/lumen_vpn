@@ -4,12 +4,15 @@ services:
   node-agent:
     image: ${LUMEN_NODE_AGENT_IMAGE}
     restart: unless-stopped
+    network_mode: host
     environment:
       TZ: ${TZ:-UTC}
       LUMEN_CONTROL_PLANE_URL: ${LUMEN_CONTROL_PLANE_URL:-https://panel.example.com}
       LUMEN_NODE_NAME: ${LUMEN_NODE_NAME:-manual-node}
       LUMEN_INSTALL_TOKEN_FILE: /run/lumen-node/install-token
       LUMEN_STATE_DIR: /var/lib/lumen-node
+      LUMEN_DRY_RUN: ${LUMEN_DRY_RUN:-true}
+      LUMEN_ENABLE_LIVE_SMOKE: ${LUMEN_ENABLE_LIVE_SMOKE:-false}
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-1}
     volumes:
       - ${LUMEN_NODE_STATE_DIR:-/opt/lumen-node/state}:/var/lib/lumen-node
