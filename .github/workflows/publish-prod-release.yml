@@ -1,0 +1,181 @@
+name: Publish and deploy signed product release
+
+on:
+  repository_dispatch:
+    types: [product-release-published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Product image tag to promote, for example v0.1.9 or main-<sha>"
+        required: true
+        type: string
+      deploy:
+        description: "Deploy the signed manifest to the configured production server"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lumen-prod-release
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RELEASE_VERSION: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.version || inputs.version }}
+  SOURCE_SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.source_sha || github.sha }}
+  DEPLOY_REQUESTED: ${{ github.event_name == 'repository_dispatch' && (github.event.client_payload.deploy || 'true') || inputs.deploy }}
+
+jobs:
+  publish-and-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate release input
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${RELEASE_VERSION}" || "${RELEASE_VERSION}" == "latest" || "${RELEASE_VERSION}" == *"/"* || "${RELEASE_VERSION}" == *":"* ]]; then
+            echo "RELEASE_VERSION must be a non-empty Docker tag and must not be latest, contain /, or contain :." >&2
+            exit 1
+          fi
+
+      - name: Checkout installer repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Log in to GHCR
+        shell: bash
+        env:
+          GHCR_USERNAME: ${{ secrets.LUMEN_GHCR_READ_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.LUMEN_GHCR_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -n "${GHCR_USERNAME}" ] || { echo "LUMEN_GHCR_READ_USERNAME secret is required" >&2; exit 1; }
+          [ -n "${GHCR_TOKEN}" ] || { echo "LUMEN_GHCR_READ_TOKEN secret is required" >&2; exit 1; }
+          printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin >/dev/null
+
+      - name: Generate signed release manifest
+        shell: bash
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.LUMEN_RELEASE_SIGNING_KEY }}
+          RELEASE_SIGNING_KID: ${{ secrets.LUMEN_RELEASE_SIGNING_KID }}
+        run: |
+          set -euo pipefail
+          [ -n "${RELEASE_SIGNING_KEY}" ] || { echo "LUMEN_RELEASE_SIGNING_KEY secret is required" >&2; exit 1; }
+          signing_key_file="${RUNNER_TEMP}/lumen-release-signing.key"
+          unsigned_manifest="${RUNNER_TEMP}/lumen-release.unsigned.json"
+          signed_manifest="${RUNNER_TEMP}/lumen-release.signed.json"
+          printf '%s\n' "${RELEASE_SIGNING_KEY}" >"${signing_key_file}"
+          chmod 0600 "${signing_key_file}"
+          bash ./scripts/generate-release-manifest.sh \
+            --version "${RELEASE_VERSION}" \
+            --output "${unsigned_manifest}" \
+            --installer-min-version v0.1.9 \
+            --free-node-limit 3
+          bash ./scripts/sign-manifest.sh \
+            --private-key-file "${signing_key_file}" \
+            --kid "${RELEASE_SIGNING_KID:-lumen-release-main}" \
+            --output "${signed_manifest}" \
+            "${unsigned_manifest}"
+          bash ./scripts/validate-manifest.sh \
+            --public-key-file ./release/release-signing.pub \
+            "${signed_manifest}"
+          install -m 0644 "${signed_manifest}" ./release/prod.json
+
+      - name: Commit official production manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release/prod.json
+          if git diff --cached --quiet; then
+            echo "release/prod.json already points at ${RELEASE_VERSION}"
+            exit 0
+          fi
+          git commit -m "chore(release): promote ${RELEASE_VERSION}"
+          git push
+
+      - name: Deploy through official upgrade script
+        if: ${{ env.DEPLOY_REQUESTED == 'true' || env.DEPLOY_REQUESTED == true }}
+        shell: bash
+        env:
+          PROD_HOST: ${{ secrets.LUMEN_PROD_HOST }}
+          PROD_SSH_PORT: ${{ secrets.LUMEN_PROD_SSH_PORT }}
+          PROD_SSH_USER: ${{ secrets.LUMEN_PROD_SSH_USER }}
+          PROD_SSH_KEY: ${{ secrets.LUMEN_PROD_SSH_KEY }}
+          UPGRADE_BACKUP_PASSPHRASE: ${{ secrets.LUMEN_UPGRADE_BACKUP_PASSPHRASE }}
+          GHCR_USERNAME: ${{ secrets.LUMEN_GHCR_READ_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.LUMEN_GHCR_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -n "${PROD_HOST}" ] || { echo "LUMEN_PROD_HOST secret is required" >&2; exit 1; }
+          [ -n "${PROD_SSH_USER}" ] || { echo "LUMEN_PROD_SSH_USER secret is required" >&2; exit 1; }
+          [ -n "${PROD_SSH_KEY}" ] || { echo "LUMEN_PROD_SSH_KEY secret is required" >&2; exit 1; }
+          [ -n "${UPGRADE_BACKUP_PASSPHRASE}" ] || { echo "LUMEN_UPGRADE_BACKUP_PASSPHRASE secret is required" >&2; exit 1; }
+          [ -n "${GHCR_USERNAME}" ] || { echo "LUMEN_GHCR_READ_USERNAME secret is required" >&2; exit 1; }
+          [ -n "${GHCR_TOKEN}" ] || { echo "LUMEN_GHCR_READ_TOKEN secret is required" >&2; exit 1; }
+          PROD_SSH_PORT="${PROD_SSH_PORT:-22}"
+
+          mkdir -p ~/.ssh
+          chmod 0700 ~/.ssh
+          printf '%s\n' "${PROD_SSH_KEY}" > ~/.ssh/lumen_prod_deploy
+          chmod 0600 ~/.ssh/lumen_prod_deploy
+          ssh-keyscan -p "${PROD_SSH_PORT}" "${PROD_HOST}" >> ~/.ssh/known_hosts
+
+          printf '%s\n' "${UPGRADE_BACKUP_PASSPHRASE}" > "${RUNNER_TEMP}/upgrade-backup.pass"
+          printf '%s\n' "${GHCR_TOKEN}" > "${RUNNER_TEMP}/registry-token"
+          chmod 0600 "${RUNNER_TEMP}/upgrade-backup.pass" "${RUNNER_TEMP}/registry-token"
+
+          scp -P "${PROD_SSH_PORT}" -i ~/.ssh/lumen_prod_deploy \
+            release/prod.json release/release-signing.pub \
+            "${RUNNER_TEMP}/upgrade-backup.pass" "${RUNNER_TEMP}/registry-token" \
+            "${PROD_SSH_USER}@${PROD_HOST}:/tmp/"
+
+          ssh -p "${PROD_SSH_PORT}" -i ~/.ssh/lumen_prod_deploy \
+            "${PROD_SSH_USER}@${PROD_HOST}" \
+            "GHCR_USERNAME='${GHCR_USERNAME}' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          set_env() {
+            local key="$1" value="$2" tmp
+            tmp="$(mktemp)"
+            if grep -qE "^${key}=" /opt/lumen/.env; then
+              awk -v key="${key}" -v value="${value}" '$0 ~ "^" key "=" { print key "=" value; next } { print }' /opt/lumen/.env >"${tmp}"
+            else
+              cat /opt/lumen/.env >"${tmp}"
+              printf '%s=%s\n' "${key}" "${value}" >>"${tmp}"
+            fi
+            install -m 0600 "${tmp}" /opt/lumen/.env
+            rm -f "${tmp}"
+          }
+
+          install -d -m 0700 /opt/lumen/secrets
+          install -d -m 0755 /opt/lumen/releases
+          install -m 0644 /tmp/prod.json /opt/lumen/releases/prod.json
+          install -m 0644 /tmp/release-signing.pub /opt/lumen/release-signing.pub
+          install -m 0600 /tmp/upgrade-backup.pass /opt/lumen/secrets/upgrade-backup.pass
+          install -m 0600 /tmp/registry-token /opt/lumen/secrets/registry-token
+          rm -f /tmp/prod.json /tmp/release-signing.pub /tmp/upgrade-backup.pass /tmp/registry-token
+
+          set_env LUMEN_RELEASE_PUBLIC_KEY_FILE /opt/lumen/release-signing.pub
+          set_env UPGRADE_BACKUP_PASSPHRASE_FILE /opt/lumen/secrets/upgrade-backup.pass
+          set_env REGISTRY_HOST ghcr.io
+          set_env REGISTRY_USERNAME "${GHCR_USERNAME}"
+          set_env REGISTRY_TOKEN_FILE /opt/lumen/secrets/registry-token
+          set_env REGISTRY_REQUIRED true
+
+          cd /root/lumen-installer/lumen_vpn
+          git fetch origin main
+          git reset --hard origin/main
+          bash ./scripts/validate-manifest.sh --public-key-file /opt/lumen/release-signing.pub /opt/lumen/releases/prod.json
+          bash ./scripts/upgrade.sh \
+            --config /opt/lumen/.env \
+            --manifest /opt/lumen/releases/prod.json \
+            --backup-passphrase-file /opt/lumen/secrets/upgrade-backup.pass
+          bash ./scripts/doctor.sh --config /opt/lumen/.env
+          REMOTE

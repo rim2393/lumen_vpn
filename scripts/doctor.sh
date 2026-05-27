@@ -34,6 +34,19 @@ check_tls_file() {
   [ -r "$TLS_CERT_DIR/$domain/$file" ]
 }
 
+check_local_port_listening() {
+  local port="$1"
+  [ "$DRY_RUN" = "1" ] && return 0
+  have_cmd ss || return 1
+  ss -ltn | awk '{print $4}' | grep -Eq "^(127\.0\.0\.1|\[::1\]|localhost)[:.]$port$|[:.]$port$"
+}
+
+validate_panel_runtime_ports() {
+  check_local_port_listening "${LUMEN_API_PORT:-8080}" \
+    && check_local_port_listening "${LUMEN_WEB_PORT:-3000}" \
+    && check_local_port_listening "${LUMEN_SUBSCRIPTION_PORT:-8081}"
+}
+
 main() {
   load_env
   check docker have_cmd docker
@@ -41,7 +54,7 @@ main() {
   check openssl have_cmd openssl
   check nginx have_cmd nginx
   check config validate_panel_config
-  check loopback-ports validate_panel_ports_available
+  check runtime-ports validate_panel_runtime_ports
   check panel-cert check_tls_file "$PANEL_DOMAIN" fullchain.pem
   check panel-key check_tls_file "$PANEL_DOMAIN" privkey.pem
   check subscription-cert check_tls_file "$SUBSCRIPTION_DOMAIN" fullchain.pem
