@@ -83,7 +83,7 @@ main() {
   if [ "$NODE_NAME" = "manual-node" ] && [ -n "${LUMEN_NODE_NAME:-}" ]; then
     NODE_NAME="$LUMEN_NODE_NAME"
   fi
-  LUMEN_NODE_AGENT_IMAGE="${NODE_AGENT_IMAGE:-${LUMEN_NODE_AGENT_IMAGE:-ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:12e0e3b85ecc34d9984837d1f78fde099152cad8642c459fd719e327e2566d6e}}"
+  LUMEN_NODE_AGENT_IMAGE="${NODE_AGENT_IMAGE:-${LUMEN_NODE_AGENT_IMAGE:-ghcr.io/rim2393/lumen-node-agent:v0.1.1@sha256:2021b49827be40b04f97cc031ffec39d7f2f8176f07ccf672c5208d5b9a6fc16}}"
   LUMEN_NODE_STATE_DIR="${LUMEN_NODE_STATE_DIR:-/opt/lumen-node/state}"
   LUMEN_NODE_SECRETS_DIR="${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}"
   if [ "$ALLOW_UNPINNED_IMAGES" = "1" ]; then

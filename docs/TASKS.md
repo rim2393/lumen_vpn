@@ -10,6 +10,6 @@
 - [x] ACME bootstrap path
 - [x] Release manifest template
 - [x] GitHub Actions validation
-- [ ] Replace placeholder manifest signature from signed release output
+- [x] Replace placeholder manifest signature from signed release output
 - [ ] Add typed `lumenctl`
 - [ ] Validate clean install on Debian/Ubuntu VPS

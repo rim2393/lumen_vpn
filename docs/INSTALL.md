@@ -68,10 +68,21 @@ host outside the repo and set `LUMEN_RELEASE_PUBLIC_KEY_FILE` in the private
 config, for example `/opt/lumen/release-signing.pub`. The manifest signature is
 computed over the canonical payload from `jq -cS 'del(.signature)'`.
 
+Create the signed manifest on a trusted release machine. Keep the private key
+outside the repo.
+
+```bash
+./scripts/sign-manifest.sh \
+  --private-key-file /secure/release-signing.key \
+  --kid lumen-release-2026-05 \
+  --output /secure/lumen-release-v0.1.1.json \
+  release/manifest.template.json
+```
+
 ```bash
 sudo ./scripts/upgrade.sh \
   --config /opt/lumen/.env \
-  --manifest /secure/lumen-release.json \
+  --manifest /secure/lumen-release-v0.1.1.json \
   --backup-passphrase-file /root/lumen-backup.pass
 ```
 

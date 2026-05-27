@@ -6,6 +6,7 @@ CONFIG_FILE="${CONFIG_FILE:-/opt/lumen/.env}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-$REPO_ROOT/deploy/compose/lumen.yml}"
+LUMEN_INSTALLER_VERSION="${LUMEN_INSTALLER_VERSION:-v0.1.1}"
 
 log() { printf '[lumen] %s\n' "$*" >&2; }
 warn() { printf '[lumen][warn] %s\n' "$*" >&2; }
@@ -210,6 +211,33 @@ compose_pull() {
   compose_run pull
 }
 
+semver_to_int() {
+  local raw="${1#v}" major minor patch rest
+  IFS=. read -r major minor patch rest <<EOF
+$raw
+EOF
+  [ -z "${rest:-}" ] || die "unsupported version format: $1"
+  major="${major:-0}"
+  minor="${minor:-0}"
+  patch="${patch:-0}"
+  printf '%s.%s.%s' "$major" "$minor" "$patch" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+    || die "unsupported version format: $1"
+  printf '%d%03d%03d\n' "$major" "$minor" "$patch"
+}
+
+version_gte() {
+  [ "$(semver_to_int "$1")" -ge "$(semver_to_int "$2")" ]
+}
+
+validate_installer_min_version() {
+  local manifest="$1" required
+  required="$(jq -r '.installer_min_version // empty' "$manifest")"
+  [ -n "$required" ] || die "release manifest is missing installer_min_version"
+  if ! version_gte "$LUMEN_INSTALLER_VERSION" "$required"; then
+    die "installer $LUMEN_INSTALLER_VERSION is too old for release manifest requiring $required"
+  fi
+}
+
 validate_release_manifest() {
   local manifest="$1" key_file payload_file sig_file sig_value tmpdir
   have_cmd jq || die "jq is required"
@@ -231,6 +259,7 @@ validate_release_manifest() {
     and (.signature.kid != "release-signing-key-id")
     and (.signature.value != "BASE64_SIGNATURE_PLACEHOLDER")
   ' "$manifest" >/dev/null || die "invalid release manifest"
+  validate_installer_min_version "$manifest"
 
   key_file="${LUMEN_RELEASE_PUBLIC_KEY_FILE:-}"
   [ -n "$key_file" ] || die "LUMEN_RELEASE_PUBLIC_KEY_FILE is required for production release manifest validation"
@@ -262,9 +291,11 @@ validate_release_manifest_template() {
   jq -e '
     .schema == "lumen.release.v1"
     and (.version | type == "string" and length > 0)
+    and (.installer_min_version | type == "string" and length > 0)
     and ([.images.api, .images.web, .images.node_agent, .images.subscription] | all(test("@sha256:[0-9a-f]{64}$")))
     and (.signature.value == "BASE64_SIGNATURE_PLACEHOLDER")
   ' "$manifest" >/dev/null || die "invalid release manifest template"
+  validate_installer_min_version "$manifest"
 }
 
 render_template() {

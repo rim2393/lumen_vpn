@@ -46,6 +46,7 @@ main() {
   load_env
   validate_release_manifest "$MANIFEST_FILE"
   validate_panel_config
+  registry_login
   BACKUP_PASSPHRASE_FILE="${BACKUP_PASSPHRASE_FILE:-${UPGRADE_BACKUP_PASSPHRASE_FILE:-}}"
   backup_args=(--config "$CONFIG_FILE")
   if [ -n "$BACKUP_PASSPHRASE_FILE" ]; then
