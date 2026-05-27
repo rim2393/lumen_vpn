@@ -1,0 +1,19 @@
+{
+  "schema": "lumen.release.v1",
+  "version": "v0.1.0",
+  "released_at": "2026-05-26T00:00:00Z",
+  "installer_min_version": "v0.1.0",
+  "free_node_limit": 3,
+  "images": {
+    "api": "ghcr.io/rim2393/lumen-api:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "web": "ghcr.io/rim2393/lumen-web:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "node_agent": "ghcr.io/rim2393/lumen-node-agent:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "subscription": "ghcr.io/rim2393/lumen-subscription-page:v0.1.0@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "signature": {
+    "alg": "Ed25519",
+    "kid": "release-signing-key-id",
+    "value": "BASE64_SIGNATURE_PLACEHOLDER"
+  }
+}
+

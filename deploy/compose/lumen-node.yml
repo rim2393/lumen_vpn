@@ -1,0 +1,22 @@
+name: lumen-node
+
+services:
+  node-agent:
+    image: ${LUMEN_NODE_AGENT_IMAGE}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      LUMEN_PANEL_URL: ${LUMEN_PANEL_URL:-https://panel.example.com}
+      LUMEN_NODE_NAME: ${LUMEN_NODE_NAME:-manual-node}
+      LUMEN_INSTALL_TOKEN_FILE: /run/lumen-node/install-token
+      LUMEN_STATE_DIR: /var/lib/lumen-node
+    volumes:
+      - /opt/lumen-node/state:/var/lib/lumen-node
+      - /opt/lumen-node/secrets:/run/lumen-node:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:true
+
