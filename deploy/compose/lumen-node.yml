@@ -28,6 +28,10 @@ services:
       LUMEN_SHADOWSOCKS_PLUGIN_LOG_FILE: ${LUMEN_SHADOWSOCKS_PLUGIN_LOG_FILE:-/var/lib/lumen-node/runtime/shadowsocks-plugin/ssserver.log}
       LUMEN_SHADOWSOCKS_PLUGIN_PID_FILE: ${LUMEN_SHADOWSOCKS_PLUGIN_PID_FILE:-/var/lib/lumen-node/runtime/shadowsocks-plugin/ssserver.pid}
       LUMEN_SHADOWSOCKS_PLUGIN_RELOAD_MODE: ${LUMEN_SHADOWSOCKS_PLUGIN_RELOAD_MODE:-process}
+      LUMEN_NAIVE_CONFIG_FILE: ${LUMEN_NAIVE_CONFIG_FILE:-/var/lib/lumen-node/runtime/naive/config.json}
+      LUMEN_NAIVE_LOG_FILE: ${LUMEN_NAIVE_LOG_FILE:-/var/lib/lumen-node/runtime/naive/sing-box.log}
+      LUMEN_NAIVE_PID_FILE: ${LUMEN_NAIVE_PID_FILE:-/var/lib/lumen-node/runtime/naive/sing-box.pid}
+      LUMEN_NAIVE_RELOAD_MODE: ${LUMEN_NAIVE_RELOAD_MODE:-process}
       LUMEN_TUIC_CONFIG_FILE: ${LUMEN_TUIC_CONFIG_FILE:-/var/lib/lumen-node/runtime/tuic/config.json}
       LUMEN_TUIC_LOG_FILE: ${LUMEN_TUIC_LOG_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.log}
       LUMEN_TUIC_PID_FILE: ${LUMEN_TUIC_PID_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.pid}
