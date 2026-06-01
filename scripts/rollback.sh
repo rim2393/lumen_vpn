@@ -35,7 +35,7 @@ restore_from_backup() {
   if [ "$DRY_RUN" = "1" ]; then
     restore_args+=(--dry-run)
   fi
-  "$REPO_ROOT/scripts/restore.sh" "${restore_args[@]}"
+  bash "$REPO_ROOT/scripts/restore.sh" "${restore_args[@]}"
 }
 
 restore_from_state_dir() {

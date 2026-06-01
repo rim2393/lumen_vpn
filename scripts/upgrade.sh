@@ -59,7 +59,7 @@ main() {
   if [ "$DRY_RUN" = "1" ]; then
     backup_args+=(--dry-run)
   fi
-  "$REPO_ROOT/scripts/backup.sh" "${backup_args[@]}"
+  bash "$REPO_ROOT/scripts/backup.sh" "${backup_args[@]}"
   record_upgrade_state
   env_set LUMEN_VERSION "$(jq_get '.version')"
   env_set LUMEN_API_IMAGE "$(jq_get '.images.api')"

@@ -126,7 +126,7 @@ main() {
     if [ "$INIT_CONFIG" = "1" ]; then
       configure_args+=(--force)
     fi
-    "$REPO_ROOT/scripts/configure.sh" "${configure_args[@]}"
+    bash "$REPO_ROOT/scripts/configure.sh" "${configure_args[@]}"
   fi
   load_env
   validate_panel_config

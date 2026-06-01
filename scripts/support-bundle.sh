@@ -38,7 +38,7 @@ main() {
   work="$(mktemp -d)"
   trap 'rm -rf -- "$work"' EXIT
   mkdir -p "$work"
-  "$REPO_ROOT/scripts/doctor.sh" --config "$CONFIG_FILE" --dry-run >"$work/doctor.txt" 2>&1 || true
+  bash "$REPO_ROOT/scripts/doctor.sh" --config "$CONFIG_FILE" --dry-run >"$work/doctor.txt" 2>&1 || true
   compose logs --tail=300 2>&1 | sanitize >"$work/compose.log" || true
   sanitize <"$CONFIG_FILE" >"$work/lumen.env.redacted"
   run mkdir -p "$LUMEN_SUPPORT_DIR"
