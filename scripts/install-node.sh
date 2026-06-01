@@ -130,7 +130,11 @@ main() {
       ( umask 077 && printf '%s\n' "$token" > "$LUMEN_NODE_SECRETS_DIR/install-token" )
     else
       [ -r "$TOKEN_FILE" ] || die "install token file is not readable"
-      install -m 0600 "$TOKEN_FILE" "$LUMEN_NODE_SECRETS_DIR/install-token"
+      source_token_path="$(readlink -f "$TOKEN_FILE")"
+      target_token_path="$(readlink -f "$LUMEN_NODE_SECRETS_DIR/install-token" 2>/dev/null || printf '%s' "$LUMEN_NODE_SECRETS_DIR/install-token")"
+      if [ "$source_token_path" != "$target_token_path" ]; then
+        install -m 0600 "$TOKEN_FILE" "$LUMEN_NODE_SECRETS_DIR/install-token"
+      fi
     fi
     chown 1000:1000 "$LUMEN_NODE_SECRETS_DIR/install-token"
     chmod 0400 "$LUMEN_NODE_SECRETS_DIR/install-token"
