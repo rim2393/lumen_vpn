@@ -50,6 +50,8 @@ services:
       - ${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}:/run/lumen-node:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /lib/modules:/lib/modules:ro
+    devices:
+      - /dev/net/tun:/dev/net/tun
     cap_add:
       - NET_ADMIN
       - NET_RAW
