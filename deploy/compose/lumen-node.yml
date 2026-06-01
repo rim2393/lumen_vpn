@@ -20,6 +20,10 @@ services:
       LUMEN_HYSTERIA2_LOG_FILE: ${LUMEN_HYSTERIA2_LOG_FILE:-/var/lib/lumen-node/runtime/hysteria2/sing-box.log}
       LUMEN_HYSTERIA2_PID_FILE: ${LUMEN_HYSTERIA2_PID_FILE:-/var/lib/lumen-node/runtime/hysteria2/sing-box.pid}
       LUMEN_HYSTERIA2_RELOAD_MODE: ${LUMEN_HYSTERIA2_RELOAD_MODE:-process}
+      LUMEN_SHADOWSOCKS_CONFIG_FILE: ${LUMEN_SHADOWSOCKS_CONFIG_FILE:-/var/lib/lumen-node/runtime/shadowsocks/config.json}
+      LUMEN_SHADOWSOCKS_LOG_FILE: ${LUMEN_SHADOWSOCKS_LOG_FILE:-/var/lib/lumen-node/runtime/shadowsocks/sing-box.log}
+      LUMEN_SHADOWSOCKS_PID_FILE: ${LUMEN_SHADOWSOCKS_PID_FILE:-/var/lib/lumen-node/runtime/shadowsocks/sing-box.pid}
+      LUMEN_SHADOWSOCKS_RELOAD_MODE: ${LUMEN_SHADOWSOCKS_RELOAD_MODE:-process}
       LUMEN_TUIC_CONFIG_FILE: ${LUMEN_TUIC_CONFIG_FILE:-/var/lib/lumen-node/runtime/tuic/config.json}
       LUMEN_TUIC_LOG_FILE: ${LUMEN_TUIC_LOG_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.log}
       LUMEN_TUIC_PID_FILE: ${LUMEN_TUIC_PID_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.pid}
