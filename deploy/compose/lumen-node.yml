@@ -32,6 +32,12 @@ services:
       LUMEN_NAIVE_LOG_FILE: ${LUMEN_NAIVE_LOG_FILE:-/var/lib/lumen-node/runtime/naive/sing-box.log}
       LUMEN_NAIVE_PID_FILE: ${LUMEN_NAIVE_PID_FILE:-/var/lib/lumen-node/runtime/naive/sing-box.pid}
       LUMEN_NAIVE_RELOAD_MODE: ${LUMEN_NAIVE_RELOAD_MODE:-process}
+      LUMEN_OPENVPN_CONFIG_FILE: ${LUMEN_OPENVPN_CONFIG_FILE:-/var/lib/lumen-node/runtime/openvpn/server.conf}
+      LUMEN_OPENVPN_LOG_FILE: ${LUMEN_OPENVPN_LOG_FILE:-/var/lib/lumen-node/runtime/openvpn/openvpn.log}
+      LUMEN_OPENVPN_PID_FILE: ${LUMEN_OPENVPN_PID_FILE:-/var/lib/lumen-node/runtime/openvpn/openvpn.pid}
+      LUMEN_OPENVPN_AUTH_SCRIPT: ${LUMEN_OPENVPN_AUTH_SCRIPT:-/var/lib/lumen-node/runtime/openvpn/auth-user-pass.sh}
+      LUMEN_OPENVPN_USERS_FILE: ${LUMEN_OPENVPN_USERS_FILE:-/var/lib/lumen-node/runtime/openvpn/users.txt}
+      LUMEN_OPENVPN_RELOAD_MODE: ${LUMEN_OPENVPN_RELOAD_MODE:-process}
       LUMEN_TUIC_CONFIG_FILE: ${LUMEN_TUIC_CONFIG_FILE:-/var/lib/lumen-node/runtime/tuic/config.json}
       LUMEN_TUIC_LOG_FILE: ${LUMEN_TUIC_LOG_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.log}
       LUMEN_TUIC_PID_FILE: ${LUMEN_TUIC_PID_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.pid}
