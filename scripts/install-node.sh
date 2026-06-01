@@ -76,6 +76,8 @@ write_node_env() {
     printf 'LUMEN_TUIC_LOG_FILE=%s\n' "${LUMEN_TUIC_LOG_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.log}"
     printf 'LUMEN_TUIC_PID_FILE=%s\n' "${LUMEN_TUIC_PID_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.pid}"
     printf 'LUMEN_TUIC_RELOAD_MODE=%s\n' "${LUMEN_TUIC_RELOAD_MODE:-process}"
+    printf 'LUMEN_WIREGUARD_CONFIG_FILE=%s\n' "${LUMEN_WIREGUARD_CONFIG_FILE:-/var/lib/lumen-node/runtime/wireguard/lumen-wg.conf}"
+    printf 'LUMEN_WIREGUARD_RELOAD_MODE=%s\n' "${LUMEN_WIREGUARD_RELOAD_MODE:-wg-quick}"
     printf 'REGISTRY_HOST=%s\n' "${REGISTRY_HOST:-}"
     printf 'REGISTRY_USERNAME=%s\n' "${REGISTRY_USERNAME:-}"
     printf 'REGISTRY_TOKEN_FILE=%s\n' "${REGISTRY_TOKEN_FILE:-}"

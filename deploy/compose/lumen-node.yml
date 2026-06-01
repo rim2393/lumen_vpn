@@ -24,11 +24,14 @@ services:
       LUMEN_TUIC_LOG_FILE: ${LUMEN_TUIC_LOG_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.log}
       LUMEN_TUIC_PID_FILE: ${LUMEN_TUIC_PID_FILE:-/var/lib/lumen-node/runtime/tuic/sing-box.pid}
       LUMEN_TUIC_RELOAD_MODE: ${LUMEN_TUIC_RELOAD_MODE:-process}
+      LUMEN_WIREGUARD_CONFIG_FILE: ${LUMEN_WIREGUARD_CONFIG_FILE:-/var/lib/lumen-node/runtime/wireguard/lumen-wg.conf}
+      LUMEN_WIREGUARD_RELOAD_MODE: ${LUMEN_WIREGUARD_RELOAD_MODE:-wg-quick}
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-1}
     volumes:
       - ${LUMEN_NODE_STATE_DIR:-/opt/lumen-node/state}:/var/lib/lumen-node
       - ${LUMEN_NODE_SECRETS_DIR:-/opt/lumen-node/secrets}:/run/lumen-node:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - /lib/modules:/lib/modules:ro
     cap_add:
       - NET_ADMIN
       - NET_RAW
