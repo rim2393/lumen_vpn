@@ -136,6 +136,12 @@ main() {
   run mkdir -p "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
   run chown 1000:1000 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
   run chmod 0700 "$LUMEN_NODE_SECRETS_DIR" "$LUMEN_NODE_STATE_DIR"
+  run sysctl -w net.ipv4.ip_forward=1 >/dev/null
+  if [ "$DRY_RUN" != "1" ] && [ -d /etc/sysctl.d ]; then
+    printf '%s\n' 'net.ipv4.ip_forward=1' >/etc/sysctl.d/99-lumen-node.conf
+  elif [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would persist net.ipv4.ip_forward=1"
+  fi
   if [ "$DRY_RUN" = "1" ]; then
     log "dry-run would create $CONFIG_FILE with non-secret node settings"
     log "dry-run node env: LUMEN_CONTROL_PLANE_URL=$CONTROL_PLANE_URL LUMEN_NODE_NAME=$NODE_NAME"
