@@ -1,18 +1,18 @@
 {
   "schema": "lumen.release.v1",
-  "version": "v0.1.83",
-  "released_at": "2026-06-01T22:56:22Z",
+  "version": "v0.1.84",
+  "released_at": "2026-06-01T23:02:02Z",
   "installer_min_version": "v0.1.9",
   "free_node_limit": 3,
   "images": {
-    "api": "ghcr.io/rim2393/lumen-api:v0.1.83@sha256:1bf9883a23163d296f6eebc88cfa5edc9c0d689872bda5391bc872b134223525",
-    "web": "ghcr.io/rim2393/lumen-web:v0.1.83@sha256:e5b974e4a0eae70f111b1d87679629edd541daaff4afe1dfa4513d4cafb68e89",
-    "node_agent": "ghcr.io/rim2393/lumen-node-agent:v0.1.83@sha256:4ce68d74ba711067613490fb73670f1174d8927b7b646b4cc3585220f304e8c2",
-    "subscription": "ghcr.io/rim2393/lumen-subscription-page:v0.1.83@sha256:2400d4e6f1eca86278783420cdcb899b615a4c1dc4db0247e12f00a1e7b3b2b1"
+    "api": "ghcr.io/rim2393/lumen-api:v0.1.84@sha256:887530f3848ebc5d5ad73e423a07887bcae9161ce7300bc3d29103dfb9c13049",
+    "web": "ghcr.io/rim2393/lumen-web:v0.1.84@sha256:461ad8b59a27ae8bf892150f32015cd23bbd4576cc6780dcaa4393cb76b67230",
+    "node_agent": "ghcr.io/rim2393/lumen-node-agent:v0.1.84@sha256:88910ab141327a2fe84e5b62e1bc7d8fac7b7df028978a743458a5061ced0099",
+    "subscription": "ghcr.io/rim2393/lumen-subscription-page:v0.1.84@sha256:49fa386ce85f61cd9bc48be5c1011d05af266c9790db5bc564e804cf6a55f773"
   },
   "signature": {
     "alg": "Ed25519",
     "kid": "lumen-release-main",
-    "value": "qQIM3Qg9xpchg5T8Kr/d+U1DdFTEU9JgD7uCwOfdBBLGBv9QhQbaX7zQ5HQmNbqCz2EQDlkNnsFKegKaMVMtDQ=="
+    "value": "eWj3yYv9aY1y8oqgAe2k7KJoCxfrwxrRMMLiT52GQ2/7GMPJgiv7OlgAj02KRuEgq7ROQj7PFk+nlAQmVPeeAg=="
   }
 }
