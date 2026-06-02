@@ -12,6 +12,7 @@ services:
       LUMEN_INSTALL_TOKEN_FILE: /run/lumen-node/install-token
       LUMEN_STATE_DIR: /var/lib/lumen-node
       LUMEN_DRY_RUN: ${LUMEN_DRY_RUN:-true}
+      LUMEN_CAPABILITIES: ${LUMEN_CAPABILITIES:-runtime.xray_core,runtime.sing_box,runtime.strongswan,protocol.ipsec_kernel,protocol.wireguard_kernel,network.tun,network.udp_quic,bind.privileged_ports}
       LUMEN_ENABLE_LIVE_SMOKE: ${LUMEN_ENABLE_LIVE_SMOKE:-false}
       LUMEN_XRAY_CONFIG_FILE: ${LUMEN_XRAY_CONFIG_FILE:-/var/lib/lumen-node/runtime/xray/config.json}
       LUMEN_XRAY_LOG_FILE: ${LUMEN_XRAY_LOG_FILE:-/var/lib/lumen-node/runtime/xray/xray.log}
