@@ -75,20 +75,6 @@ services:
     ports:
       - "127.0.0.1:${LUMEN_API_PORT:-8080}:${LUMEN_API_INTERNAL_PORT:-8000}"
 
-  worker:
-    profiles:
-      - worker
-    image: ${LUMEN_API_IMAGE}
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_started
-    command: ["lumen-api", "worker"]
-    environment: *app-env
-    volumes:
-      - ${LUMEN_DATA_DIR:-/opt/lumen/data}/runtime:/var/lib/lumen/runtime
-      - ${LUMEN_SECRETS_DIR:-/opt/lumen/secrets}:/run/lumen/secrets:ro
-
   web:
     image: ${LUMEN_WEB_IMAGE}
     restart: unless-stopped
