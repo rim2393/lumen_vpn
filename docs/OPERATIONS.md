@@ -9,7 +9,11 @@ Compose rendering, pinned image syntax, Nginx, TLS files, and health endpoints.
 
 `backup.sh` creates a PostgreSQL dump plus runtime config, secret files,
 uploads, and runtime state. Backups contain secrets and should be encrypted with
-`--passphrase-file`.
+`--passphrase-file`. Backup retention is automatic: by default the installer
+keeps the last 12 `lumen-backup-*` archives and the last 12 `upgrade-state`
+directories. Override this with `LUMEN_BACKUP_RETENTION_COUNT` and
+`LUMEN_UPGRADE_STATE_RETENTION_COUNT` in `/opt/lumen/.env` when a longer
+rollback window is required.
 
 `restore.sh` is destructive and requires `--force`.
 

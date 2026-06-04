@@ -52,6 +52,7 @@ main() {
     out="$out.enc"
   fi
   log "backup created: $out"
+  prune_glob_retention "$LUMEN_BACKUP_DIR" 'lumen-backup-*.tar.gz*' "$LUMEN_BACKUP_RETENTION_COUNT" backup
 }
 
 main "$@"

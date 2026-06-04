@@ -73,6 +73,7 @@ main() {
   compose_run pull
   compose_run run --rm api alembic upgrade head
   compose_run up -d
+  prune_glob_retention "$LUMEN_BACKUP_DIR/upgrade-state" '*' "$LUMEN_UPGRADE_STATE_RETENTION_COUNT" upgrade-state
   log "upgrade complete"
 }
 

@@ -51,6 +51,8 @@ load_env() {
   LUMEN_BACKUP_DIR="${LUMEN_BACKUP_DIR:-$LUMEN_HOME/backups}"
   LUMEN_SUPPORT_DIR="${LUMEN_SUPPORT_DIR:-$LUMEN_HOME/support-bundles}"
   LUMEN_SECRETS_DIR="${LUMEN_SECRETS_DIR:-$LUMEN_HOME/secrets}"
+  LUMEN_BACKUP_RETENTION_COUNT="${LUMEN_BACKUP_RETENTION_COUNT:-12}"
+  LUMEN_UPGRADE_STATE_RETENTION_COUNT="${LUMEN_UPGRADE_STATE_RETENTION_COUNT:-12}"
   TLS_CERT_DIR="${TLS_CERT_DIR:-/etc/nginx/lumen/certs}"
 }
 
@@ -101,6 +103,32 @@ ensure_secret() {
 ensure_dirs() {
   run mkdir -p "$LUMEN_HOME" "$LUMEN_DATA_DIR" "$LUMEN_BACKUP_DIR" "$LUMEN_SUPPORT_DIR" "$LUMEN_SECRETS_DIR"
   run chmod 0700 "$LUMEN_SECRETS_DIR"
+}
+
+validate_retention_count() {
+  local key="$1" value="$2"
+  printf '%s' "$value" | grep -Eq '^[0-9]+$' || die "$key must be numeric"
+  if [ "$value" -lt 1 ] || [ "$value" -gt 365 ]; then
+    die "$key must be in range 1..365"
+  fi
+}
+
+prune_glob_retention() {
+  local dir="$1" pattern="$2" keep="$3" label="$4"
+  validate_retention_count "${label}_RETENTION_COUNT" "$keep"
+  [ -d "$dir" ] || return 0
+  if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run would keep last $keep $label entries in $dir"
+    return 0
+  fi
+  find "$dir" -maxdepth 1 -name "$pattern" -printf '%T@ %p\n' \
+    | sort -rn \
+    | awk -v keep="$keep" 'NR > keep { sub(/^[^ ]+ /, ""); print }' \
+    | while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        rm -rf -- "$path"
+        log "pruned old $label: $path"
+      done
 }
 
 compose() {
