@@ -13,12 +13,12 @@ fail() {
 }
 
 require_file() {
-  [ -f "$1" ] || fail "missing required file: ${1#$ROOT_DIR/}"
+  [ -f "$1" ] || fail "missing required file: ${1#"$ROOT_DIR"/}"
 }
 
 require_text() {
   local file="$1" needle="$2"
-  grep -Fq "$needle" "$file" || fail "${file#$ROOT_DIR/} missing required text: $needle"
+  grep -Fq "$needle" "$file" || fail "${file#"$ROOT_DIR"/} missing required text: $needle"
 }
 
 for file in "$PUBLISH_WORKFLOW" "$CI_WORKFLOW" "$PRODUCTION_DOC" "$OPERATIONS_DOC"; do
