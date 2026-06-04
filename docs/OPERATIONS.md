@@ -33,4 +33,6 @@ sharing externally.
 `publish-prod-release.yml` is the production promotion workflow. It receives a
 private product image tag, resolves immutable GHCR digests, signs
 `release/prod.json`, commits the official manifest, and deploys it to the panel
-server through `upgrade.sh`. See `docs/PRODUCTION_RELEASES.md`.
+server through `upgrade.sh`. `scripts/validate-release-pipeline-guard.sh`
+checks that this flow remains fail-fast for signing, manifest validation,
+deploy secrets and the official upgrade path. See `docs/PRODUCTION_RELEASES.md`.

@@ -3,6 +3,11 @@
 Production updates are delivered through the public installer repository, but
 private product source remains in `rim2393/full-revna-like-projekt`.
 
+The release pipeline invariants are checked by
+`scripts/validate-release-pipeline-guard.sh` in CI. A failure in that guard is a
+release blocker because signing, digest pinning, deploy secrets, or the
+official upgrade path may have been weakened.
+
 ## Flow
 
 1. A commit lands on `main` in the private product repository.
