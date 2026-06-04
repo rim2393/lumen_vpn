@@ -5,6 +5,7 @@
 *.md text eol=lf
 *.json text eol=lf
 *.txt text eol=lf
+*.pub text eol=lf
 .env.example text eol=lf
 *.template text eol=lf
 
