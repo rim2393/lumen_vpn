@@ -16,8 +16,9 @@ official upgrade path may have been weakened.
 3. After image verification, the private workflow sends a
    `product-release-published` dispatch event to this installer repository.
 4. This repository resolves image digests, generates `release/prod.json`, signs
-   it with the release Ed25519 key from GitHub Secrets, validates the signature,
-   and commits the manifest.
+   it with the release Ed25519 key from GitHub Secrets, derives the matching
+   public verification key, validates the signature, and commits the manifest
+   plus public key.
 5. The deploy step uploads the signed manifest and public verification key to
    the production panel server.
 6. The server runs `scripts/upgrade.sh`, which verifies the manifest, creates an

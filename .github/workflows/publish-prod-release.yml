@@ -67,10 +67,12 @@ jobs:
           set -euo pipefail
           [ -n "${RELEASE_SIGNING_KEY}" ] || { echo "LUMEN_RELEASE_SIGNING_KEY secret is required" >&2; exit 1; }
           signing_key_file="${RUNNER_TEMP}/lumen-release-signing.key"
+          public_key_file="${RUNNER_TEMP}/lumen-release-signing.pub"
           unsigned_manifest="${RUNNER_TEMP}/lumen-release.unsigned.json"
           signed_manifest="${RUNNER_TEMP}/lumen-release.signed.json"
           printf '%s\n' "${RELEASE_SIGNING_KEY}" >"${signing_key_file}"
           chmod 0600 "${signing_key_file}"
+          openssl pkey -in "${signing_key_file}" -pubout -out "${public_key_file}"
           bash ./scripts/generate-release-manifest.sh \
             --version "${RELEASE_VERSION}" \
             --output "${unsigned_manifest}" \
@@ -82,9 +84,10 @@ jobs:
             --output "${signed_manifest}" \
             "${unsigned_manifest}"
           bash ./scripts/validate-manifest.sh \
-            --public-key-file ./release/release-signing.pub \
+            --public-key-file "${public_key_file}" \
             "${signed_manifest}"
           install -m 0644 "${signed_manifest}" ./release/prod.json
+          install -m 0644 "${public_key_file}" ./release/release-signing.pub
 
       - name: Commit official production manifest
         shell: bash
@@ -92,7 +95,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add release/prod.json
+          git add release/prod.json release/release-signing.pub
           if git diff --cached --quiet; then
             echo "release/prod.json already points at ${RELEASE_VERSION}"
             exit 0

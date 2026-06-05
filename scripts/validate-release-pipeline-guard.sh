@@ -39,9 +39,11 @@ do
 done
 
 require_text "$PUBLISH_WORKFLOW" "LUMEN_RELEASE_SIGNING_KEY secret is required"
+require_text "$PUBLISH_WORKFLOW" "openssl pkey -in \"\${signing_key_file}\" -pubout -out \"\${public_key_file}\""
 require_text "$PUBLISH_WORKFLOW" "bash ./scripts/sign-manifest.sh"
 require_text "$PUBLISH_WORKFLOW" "bash ./scripts/validate-manifest.sh"
 require_text "$PUBLISH_WORKFLOW" "install -m 0644 \"\${signed_manifest}\" ./release/prod.json"
+require_text "$PUBLISH_WORKFLOW" "install -m 0644 \"\${public_key_file}\" ./release/release-signing.pub"
 require_text "$PUBLISH_WORKFLOW" "bash ./scripts/upgrade.sh"
 require_text "$PUBLISH_WORKFLOW" "bash ./scripts/doctor.sh"
 require_text "$PUBLISH_WORKFLOW" "REGISTRY_REQUIRED true"
