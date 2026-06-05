@@ -1,7 +1,7 @@
 {
   "schema": "lumen.release.v1",
   "version": "main-4ba90db38fabdf2e9f019780343d4d102fdd9b59",
-  "released_at": "2026-06-05T20:17:14Z",
+  "released_at": "2026-06-05T20:20:02Z",
   "installer_min_version": "v0.1.9",
   "free_node_limit": 3,
   "images": {
@@ -13,6 +13,6 @@
   "signature": {
     "alg": "Ed25519",
     "kid": "lumen-release-main",
-    "value": "zRhgWsOH3WtxU9ruMuhB4BjwHIPy6a7IxcSw1pS42mPwOElhB7v/ZgGvZoRIf8PceT+cdtgXZAlWByFloigeCQ=="
+    "value": "5l+zQNIDFOwZVrxotpZIdBGA4HlJ4hytao14Ca5zjrq2+GAvZf8CfD9cU1Ljzs+38QHo2tWaFbkoTfZLUjxaCQ=="
   }
 }
