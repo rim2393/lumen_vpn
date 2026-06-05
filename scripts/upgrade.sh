@@ -46,6 +46,15 @@ main() {
   load_env
   validate_release_manifest "$MANIFEST_FILE"
   validate_panel_config
+  run mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled /var/www/lumen-acme "$TLS_CERT_DIR"
+  render_template "$REPO_ROOT/deploy/nginx/lumen-http-acme.conf.template" /etc/nginx/sites-available/lumen-http-acme.conf
+  render_template "$REPO_ROOT/deploy/nginx/lumen-panel.conf.template" /etc/nginx/sites-available/lumen-panel.conf
+  render_template "$REPO_ROOT/deploy/nginx/lumen-subscription.conf.template" /etc/nginx/sites-available/lumen-subscription.conf
+  run ln -sfn /etc/nginx/sites-available/lumen-http-acme.conf /etc/nginx/sites-enabled/lumen-http-acme.conf
+  run ln -sfn /etc/nginx/sites-available/lumen-panel.conf /etc/nginx/sites-enabled/lumen-panel.conf
+  run ln -sfn /etc/nginx/sites-available/lumen-subscription.conf /etc/nginx/sites-enabled/lumen-subscription.conf
+  run nginx -t
+  run systemctl reload nginx
   registry_login
   BACKUP_PASSPHRASE_FILE="${BACKUP_PASSPHRASE_FILE:-${UPGRADE_BACKUP_PASSPHRASE_FILE:-}}"
   backup_args=(--config "$CONFIG_FILE")
