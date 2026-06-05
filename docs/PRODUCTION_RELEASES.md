@@ -19,8 +19,8 @@ official upgrade path may have been weakened.
    it with the release Ed25519 key from GitHub Secrets, derives the matching
    public verification key, validates the signature, and commits the manifest
    plus public key.
-5. The deploy step uploads the signed manifest and public verification key to
-   the production panel server.
+5. The deploy step uploads the signed manifest, public verification key and the
+   current public installer bundle to the production panel server.
 6. The server runs `scripts/upgrade.sh`, which verifies the manifest, creates an
    encrypted backup, records pre-upgrade state, pulls images, runs migrations,
    restarts Compose, and runs `scripts/doctor.sh`.
@@ -54,7 +54,8 @@ backup passphrases in git.
 
 ## Runtime Files On The Panel Server
 
-- `/root/lumen-installer/lumen_vpn`: public installer checkout.
+- `/opt/lumen/installer/lumen_vpn`: public installer bundle used by the official
+  upgrade path.
 - `/opt/lumen/.env`: private runtime config.
 - `/opt/lumen/release-signing.pub`: trusted release verification key.
 - `/opt/lumen/releases/prod.json`: last promoted signed release manifest.

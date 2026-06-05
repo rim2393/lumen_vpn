@@ -48,6 +48,8 @@ require_text "$PUBLISH_WORKFLOW" "bash ./scripts/upgrade.sh"
 require_text "$PUBLISH_WORKFLOW" "bash ./scripts/doctor.sh"
 require_text "$PUBLISH_WORKFLOW" "REGISTRY_REQUIRED true"
 require_text "$PUBLISH_WORKFLOW" "release/prod.json release/release-signing.pub"
+require_text "$PUBLISH_WORKFLOW" "lumen-installer.tar.gz"
+require_text "$PUBLISH_WORKFLOW" "cd /opt/lumen/installer/lumen_vpn"
 
 if grep -Eiq 'skip(ping)? .*sign|skip(ping)? .*manifest|continue-on-error:\s*true' "$PUBLISH_WORKFLOW"; then
   fail "publish workflow must not silently skip signing/manifest/deploy failures"

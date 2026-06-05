@@ -133,10 +133,12 @@ jobs:
           printf '%s\n' "${UPGRADE_BACKUP_PASSPHRASE}" > "${RUNNER_TEMP}/upgrade-backup.pass"
           printf '%s\n' "${GHCR_TOKEN}" > "${RUNNER_TEMP}/registry-token"
           chmod 0600 "${RUNNER_TEMP}/upgrade-backup.pass" "${RUNNER_TEMP}/registry-token"
+          tar --exclude-vcs -czf "${RUNNER_TEMP}/lumen-installer.tar.gz" .
 
           scp -P "${PROD_SSH_PORT}" -i ~/.ssh/lumen_prod_deploy \
             release/prod.json release/release-signing.pub \
             "${RUNNER_TEMP}/upgrade-backup.pass" "${RUNNER_TEMP}/registry-token" \
+            "${RUNNER_TEMP}/lumen-installer.tar.gz" \
             "${PROD_SSH_USER}@${PROD_HOST}:/tmp/"
 
           ssh -p "${PROD_SSH_PORT}" -i ~/.ssh/lumen_prod_deploy \
@@ -159,6 +161,15 @@ jobs:
 
           install -d -m 0700 /opt/lumen/secrets
           install -d -m 0755 /opt/lumen/releases
+          install -d -m 0755 /opt/lumen/installer
+          installer_tmp="/opt/lumen/installer/lumen_vpn.tmp"
+          installer_dir="/opt/lumen/installer/lumen_vpn"
+          rm -rf "${installer_tmp}"
+          install -d -m 0755 "${installer_tmp}"
+          tar -xzf /tmp/lumen-installer.tar.gz -C "${installer_tmp}"
+          rm -f /tmp/lumen-installer.tar.gz
+          rm -rf "${installer_dir}"
+          mv "${installer_tmp}" "${installer_dir}"
           install -m 0644 /tmp/prod.json /opt/lumen/releases/prod.json
           install -m 0644 /tmp/release-signing.pub /opt/lumen/release-signing.pub
           install -m 0600 /tmp/upgrade-backup.pass /opt/lumen/secrets/upgrade-backup.pass
@@ -172,9 +183,7 @@ jobs:
           set_env REGISTRY_TOKEN_FILE /opt/lumen/secrets/registry-token
           set_env REGISTRY_REQUIRED true
 
-          cd /root/lumen-installer/lumen_vpn
-          git fetch origin main
-          git reset --hard origin/main
+          cd /opt/lumen/installer/lumen_vpn
           bash ./scripts/validate-manifest.sh --public-key-file /opt/lumen/release-signing.pub /opt/lumen/releases/prod.json
           bash ./scripts/upgrade.sh \
             --config /opt/lumen/.env \
